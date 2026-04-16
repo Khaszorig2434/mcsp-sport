@@ -1,0 +1,60 @@
+import type {
+  Tournament, Match, StandingsGroup, Bracket,
+} from './types';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL
+  ? `${process.env.NEXT_PUBLIC_API_URL}/api`
+  : '/api';
+
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`API error ${res.status}: ${path}`);
+  return res.json() as Promise<T>;
+}
+
+export const api = {
+  tournaments: {
+    list(params?: { sport?: string; status?: string; gender?: string }) {
+      const qs = params ? '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => !!v) as [string, string][]
+      ).toString() : '';
+      return get<Tournament[]>(`/tournaments${qs}`);
+    },
+    get(id: number | string) {
+      return get<Tournament>(`/tournaments/${id}`);
+    },
+  },
+
+  matches: {
+    list(params: { tournamentId: number | string; stage?: string; status?: string }) {
+      const qs = '?' + new URLSearchParams(
+        Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][]
+      ).toString();
+      return get<Match[]>(`/matches${qs}`);
+    },
+    live() {
+      return get<Match[]>('/matches/live');
+    },
+    async update(id: number | string, body: { score1?: number; score2?: number; status?: string }) {
+      const res = await fetch(`${API_BASE}/matches/${id}`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error(`Failed to update match ${id}`);
+      return res.json();
+    },
+  },
+
+  standings: {
+    get(tournamentId: number | string) {
+      return get<StandingsGroup[]>(`/standings?tournamentId=${tournamentId}`);
+    },
+  },
+
+  bracket: {
+    get(tournamentId: number | string) {
+      return get<Bracket>(`/bracket?tournamentId=${tournamentId}`);
+    },
+  },
+};
