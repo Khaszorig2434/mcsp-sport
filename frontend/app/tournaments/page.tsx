@@ -1,11 +1,12 @@
 import { api } from '@/lib/api';
 import TournamentCard from '@/components/TournamentCard';
 import { Trophy } from 'lucide-react';
+import type { Tournament } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TournamentsPage() {
-  let tournaments = [];
+  let tournaments: Tournament[] = [];
   try {
     tournaments = await api.tournaments.list();
   } catch {
