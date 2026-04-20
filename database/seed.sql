@@ -1,73 +1,79 @@
 -- ============================================================
--- MCSP Sport - Seed Data
+-- MCSP Sport - Seed Data (reset + fresh insert)
 -- ============================================================
 
--- Sports
+TRUNCATE matches, group_teams, groups, tournaments, teams, sports RESTART IDENTITY CASCADE;
+
+-- ============================================================
+-- SPORTS
+-- ============================================================
 INSERT INTO sports (id, name, type, icon) VALUES
   (1, 'Basketball',   'traditional', 'basketball'),
-  (2, 'Chess',        'traditional', 'chess'),
-  (3, 'CS2',          'esports',     'cs2'),
-  (4, 'Dota 2',       'esports',     'dota2'),
-  (5, 'Darts',        'traditional', 'darts'),
-  (6, 'Table Tennis', 'traditional', 'table-tennis');
+  (2, 'CS2',          'esports',     'cs2'),
+  (3, 'Dota 2',       'esports',     'dota2'),
+  (4, 'Table Tennis', 'traditional', 'table-tennis'),
+  (5, 'Chess',        'traditional', 'chess'),
+  (6, 'Darts',        'traditional', 'darts');
 
 SELECT setval('sports_id_seq', 6);
 
 -- ============================================================
--- CS2 Teams
+-- TEAMS (6 per sport = 36 total)
 -- ============================================================
-INSERT INTO teams (id, name, short_name, sport_id, country) VALUES
-  (1,  'Team Vitality',  'VIT',  3, 'France'),
-  (2,  'NAVI',           'NAVI', 3, 'Ukraine'),
-  (3,  'FaZe Clan',      'FAZE', 3, 'International'),
-  (4,  'G2 Esports',     'G2',   3, 'International'),
-  (5,  'Astralis',       'AST',  3, 'Denmark'),
-  (6,  'Heroic',         'HER',  3, 'Denmark');
 
--- Basketball Women Teams
+-- Basketball
 INSERT INTO teams (id, name, short_name, sport_id, country) VALUES
-  (7,  'USA Women',      'USA',  1, 'United States'),
-  (8,  'France Women',   'FRA',  1, 'France'),
-  (9,  'Australia Women','AUS',  1, 'Australia'),
-  (10, 'Spain Women',    'ESP',  1, 'Spain'),
-  (11, 'China Women',    'CHN',  1, 'China'),
-  (12, 'Nigeria Women',  'NGR',  1, 'Nigeria');
+  (1,  'Team 1', 'T1',  1, 'Mongolia'),
+  (2,  'Team 2', 'T2',  1, 'Mongolia'),
+  (3,  'Team 3', 'T3',  1, 'Mongolia'),
+  (4,  'Team 4', 'T4',  1, 'Mongolia'),
+  (5,  'Team 5', 'T5',  1, 'Mongolia'),
+  (6,  'Team 6', 'T6',  1, 'Mongolia');
 
--- Dota 2 Teams
+-- CS2
 INSERT INTO teams (id, name, short_name, sport_id, country) VALUES
-  (13, 'Team Spirit',    'SPR',  4, 'Russia'),
-  (14, 'OG',             'OG',   4, 'International'),
-  (15, 'Team Secret',    'SEC',  4, 'International'),
-  (16, 'PSG.LGD',        'LGD',  4, 'China'),
-  (17, 'Tundra Esports', 'TND',  4, 'United Kingdom'),
-  (18, 'Gaimin Gladiators','GG', 4, 'Denmark');
+  (7,  'Team 1', 'T1',  2, 'Mongolia'),
+  (8,  'Team 2', 'T2',  2, 'Mongolia'),
+  (9,  'Team 3', 'T3',  2, 'Mongolia'),
+  (10, 'Team 4', 'T4',  2, 'Mongolia'),
+  (11, 'Team 5', 'T5',  2, 'Mongolia'),
+  (12, 'Team 6', 'T6',  2, 'Mongolia');
 
--- Chess Teams
+-- Dota 2
 INSERT INTO teams (id, name, short_name, sport_id, country) VALUES
-  (19, 'Magnus Carlsen',    'MCL', 2, 'Norway'),
-  (20, 'Fabiano Caruana',   'CAR', 2, 'United States'),
-  (21, 'Ding Liren',        'DIN', 2, 'China'),
-  (22, 'Ian Nepomniachtchi','NEP', 2, 'Russia'),
-  (23, 'Alireza Firouzja',  'FIR', 2, 'France'),
-  (24, 'Hikaru Nakamura',   'NAK', 2, 'United States');
+  (13, 'Team 1', 'T1',  3, 'Mongolia'),
+  (14, 'Team 2', 'T2',  3, 'Mongolia'),
+  (15, 'Team 3', 'T3',  3, 'Mongolia'),
+  (16, 'Team 4', 'T4',  3, 'Mongolia'),
+  (17, 'Team 5', 'T5',  3, 'Mongolia'),
+  (18, 'Team 6', 'T6',  3, 'Mongolia');
 
--- Darts Teams
+-- Table Tennis
 INSERT INTO teams (id, name, short_name, sport_id, country) VALUES
-  (25, 'Michael van Gerwen', 'MVG', 5, 'Netherlands'),
-  (26, 'Peter Wright',       'WRI', 5, 'Scotland'),
-  (27, 'Gerwyn Price',       'PRI', 5, 'Wales'),
-  (28, 'Jonny Clayton',      'CLA', 5, 'Wales'),
-  (29, 'Jose de Sousa',      'SOU', 5, 'Portugal'),
-  (30, 'Dimitri Van den Bergh','VDB',5,'Belgium');
+  (19, 'Team 1', 'T1',  4, 'Mongolia'),
+  (20, 'Team 2', 'T2',  4, 'Mongolia'),
+  (21, 'Team 3', 'T3',  4, 'Mongolia'),
+  (22, 'Team 4', 'T4',  4, 'Mongolia'),
+  (23, 'Team 5', 'T5',  4, 'Mongolia'),
+  (24, 'Team 6', 'T6',  4, 'Mongolia');
 
--- Table Tennis Teams
+-- Chess
 INSERT INTO teams (id, name, short_name, sport_id, country) VALUES
-  (31, 'Fan Zhendong',    'FAN', 6, 'China'),
-  (32, 'Ma Long',         'MA',  6, 'China'),
-  (33, 'Timo Boll',       'BOL', 6, 'Germany'),
-  (34, 'Xu Xin',          'XIN', 6, 'China'),
-  (35, 'Tomokazu Harimoto','HAR',6, 'Japan'),
-  (36, 'Dimitrij Ovtcharov','OVT',6,'Germany');
+  (25, 'Team 1', 'T1',  5, 'Mongolia'),
+  (26, 'Team 2', 'T2',  5, 'Mongolia'),
+  (27, 'Team 3', 'T3',  5, 'Mongolia'),
+  (28, 'Team 4', 'T4',  5, 'Mongolia'),
+  (29, 'Team 5', 'T5',  5, 'Mongolia'),
+  (30, 'Team 6', 'T6',  5, 'Mongolia');
+
+-- Darts
+INSERT INTO teams (id, name, short_name, sport_id, country) VALUES
+  (31, 'Team 1', 'T1',  6, 'Mongolia'),
+  (32, 'Team 2', 'T2',  6, 'Mongolia'),
+  (33, 'Team 3', 'T3',  6, 'Mongolia'),
+  (34, 'Team 4', 'T4',  6, 'Mongolia'),
+  (35, 'Team 5', 'T5',  6, 'Mongolia'),
+  (36, 'Team 6', 'T6',  6, 'Mongolia');
 
 SELECT setval('teams_id_seq', 36);
 
@@ -75,12 +81,12 @@ SELECT setval('teams_id_seq', 36);
 -- TOURNAMENTS
 -- ============================================================
 INSERT INTO tournaments (id, name, sport_id, gender, status, prize_pool, location, start_date, end_date) VALUES
-  (1, 'ESL Pro League Season 21',        3, 'male',   'ongoing',   '$835,000',  'Malta',      '2025-09-15', '2025-10-05'),
-  (2, 'FIBA Women''s Basketball Cup 2025',1, 'female', 'upcoming',  '$500,000',  'Spain',      '2025-11-10', '2025-11-20'),
-  (3, 'The International 2025',          4, 'male',   'ongoing',   '$3,000,000','Singapore',  '2025-10-01', '2025-10-13'),
-  (4, 'World Chess Championship 2025',   2, 'male',   'upcoming',  '$2,000,000','Dubai',      '2025-11-20', '2025-12-15'),
-  (5, 'PDC World Darts Championship 25', 5, 'male',   'upcoming',  '$700,000',  'London',     '2025-12-18', '2026-01-03'),
-  (6, 'ITTF World Tour Finals 2025',     6, 'male',   'completed', '$200,000',  'Tokyo',      '2025-08-01', '2025-08-08');
+  (1, 'MCSP Basketball Championship 2026', 1, 'male',   'ongoing',   '$500,000',  'Ulaanbaatar', '2026-04-01', '2026-04-30'),
+  (2, 'MCSP CS2 Open 2026',               2, 'male',   'ongoing',   '$250,000',  'Ulaanbaatar', '2026-04-10', '2026-04-25'),
+  (3, 'MCSP Dota 2 Invitational 2026',    3, 'male',   'upcoming',  '$300,000',  'Ulaanbaatar', '2026-05-01', '2026-05-15'),
+  (4, 'MCSP Table Tennis Cup 2026',       4, 'mixed',  'completed', '$100,000',  'Ulaanbaatar', '2026-03-01', '2026-03-10'),
+  (5, 'MCSP Chess Masters 2026',          5, 'male',   'upcoming',  '$150,000',  'Ulaanbaatar', '2026-06-01', '2026-06-20'),
+  (6, 'MCSP Darts League 2026',           6, 'male',   'upcoming',  '$80,000',   'Ulaanbaatar', '2026-07-01', '2026-07-10');
 
 SELECT setval('tournaments_id_seq', 6);
 
@@ -88,24 +94,12 @@ SELECT setval('tournaments_id_seq', 6);
 -- GROUPS
 -- ============================================================
 INSERT INTO groups (id, tournament_id, name) VALUES
-  -- CS2 ESL Pro League
-  (1, 1, 'A'),
-  (2, 1, 'B'),
-  -- FIBA Women
-  (3, 2, 'A'),
-  (4, 2, 'B'),
-  -- The International Dota 2
-  (5, 3, 'A'),
-  (6, 3, 'B'),
-  -- Chess
-  (7, 4, 'A'),
-  (8, 4, 'B'),
-  -- Darts
-  (9, 5, 'A'),
-  (10,5, 'B'),
-  -- Table Tennis
-  (11,6, 'A'),
-  (12,6, 'B');
+  (1,  1, 'A'), (2,  1, 'B'),
+  (3,  2, 'A'), (4,  2, 'B'),
+  (5,  3, 'A'), (6,  3, 'B'),
+  (7,  4, 'A'), (8,  4, 'B'),
+  (9,  5, 'A'), (10, 5, 'B'),
+  (11, 6, 'A'), (12, 6, 'B');
 
 SELECT setval('groups_id_seq', 12);
 
@@ -113,156 +107,82 @@ SELECT setval('groups_id_seq', 12);
 -- GROUP TEAMS
 -- ============================================================
 INSERT INTO group_teams (group_id, team_id) VALUES
-  -- CS2: Group A → Vitality, NAVI, FaZe
-  (1, 1), (1, 2), (1, 3),
-  -- CS2: Group B → G2, Astralis, Heroic
-  (2, 4), (2, 5), (2, 6),
-  -- Basketball Women: Group A → USA, France, Australia
-  (3, 7), (3, 8), (3, 9),
-  -- Basketball Women: Group B → Spain, China, Nigeria
-  (4, 10), (4, 11), (4, 12),
-  -- Dota 2: Group A → Team Spirit, OG, Team Secret
-  (5, 13), (5, 14), (5, 15),
-  -- Dota 2: Group B → PSG.LGD, Tundra, GG
-  (6, 16), (6, 17), (6, 18),
-  -- Chess: Group A → Carlsen, Caruana, Ding
-  (7, 19), (7, 20), (7, 21),
-  -- Chess: Group B → Nepo, Firouzja, Nakamura
-  (8, 22), (8, 23), (8, 24),
-  -- Darts: Group A → MVG, Wright, Price
-  (9, 25), (9, 26), (9, 27),
-  -- Darts: Group B → Clayton, de Sousa, VDB
-  (10, 28), (10, 29), (10, 30),
-  -- Table Tennis: Group A → Fan, Ma, Boll
-  (11, 31), (11, 32), (11, 33),
-  -- Table Tennis: Group B → Xu, Harimoto, Ovtcharov
-  (12, 34), (12, 35), (12, 36);
+  -- Basketball T1 Group A: Team 1,2,3 | Group B: Team 4,5,6
+  (1,1),(1,2),(1,3),   (2,4),(2,5),(2,6),
+  -- CS2 T2 Group A: Team 7,8,9 | Group B: Team 10,11,12
+  (3,7),(3,8),(3,9),   (4,10),(4,11),(4,12),
+  -- Dota2 T3 Group A: Team 13,14,15 | Group B: Team 16,17,18
+  (5,13),(5,14),(5,15),(6,16),(6,17),(6,18),
+  -- Table Tennis T4 Group A: Team 19,20,21 | Group B: Team 22,23,24
+  (7,19),(7,20),(7,21),(8,22),(8,23),(8,24),
+  -- Chess T5 Group A: Team 25,26,27 | Group B: Team 28,29,30
+  (9,25),(9,26),(9,27),(10,28),(10,29),(10,30),
+  -- Darts T6 Group A: Team 31,32,33 | Group B: Team 34,35,36
+  (11,31),(11,32),(11,33),(12,34),(12,35),(12,36);
 
 -- ============================================================
--- MATCHES - CS2 ESL Pro League Season 21 (tournament_id = 1)
+-- MATCHES - Basketball (tournament 1, ongoing)
 -- ============================================================
-
--- Group A matches (group_id = 1)
--- Vitality vs NAVI  → Vitality wins 2-1
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (1, 1, 1, 'group', 1, 2, 2, 1, 1, 2, '2025-09-16 14:00:00+00', 'completed');
-
--- FaZe vs Vitality  → FaZe wins 2-0
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (2, 1, 1, 'group', 3, 1, 2, 0, 3, 1, '2025-09-17 16:00:00+00', 'completed');
-
--- FaZe vs NAVI  → FaZe wins 2-1
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (3, 1, 1, 'group', 3, 2, 2, 1, 3, 2, '2025-09-18 14:00:00+00', 'completed');
-
--- Group B matches (group_id = 2)
--- G2 vs Astralis  → G2 wins 2-0
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (4, 1, 2, 'group', 4, 5, 2, 0, 4, 5, '2025-09-16 17:00:00+00', 'completed');
-
--- G2 vs Heroic  → G2 wins 2-1
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (5, 1, 2, 'group', 4, 6, 2, 1, 4, 6, '2025-09-17 18:00:00+00', 'completed');
-
--- Heroic vs Astralis  → Heroic wins 2-0
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (6, 1, 2, 'group', 6, 5, 2, 0, 6, 5, '2025-09-18 16:00:00+00', 'completed');
-
--- Semi-finals: A1(FaZe) vs B2(Heroic), B1(G2) vs A2(Vitality)
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (7, 1, NULL, 'semi', 3, 6, 2, 1, 3, 6, '2025-09-22 14:00:00+00', 'completed');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (8, 1, NULL, 'semi', 4, 1, NULL, NULL, NULL, NULL, '2025-09-22 17:00:00+00', 'live');
-
--- Bronze: Heroic vs TBD (Loser SF2 — unknown yet)
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (9, 1, NULL, 'bronze', NULL, NULL, NULL, NULL, NULL, NULL, '2025-09-25 14:00:00+00', 'upcoming');
-
--- Final
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (10, 1, NULL, 'final', NULL, NULL, NULL, NULL, NULL, NULL, '2025-09-25 17:00:00+00', 'upcoming');
+-- Group A
+INSERT INTO matches VALUES (1,  1,1,'group',1,2, 2,1,1,2, '2026-04-05 10:00+08','completed');
+INSERT INTO matches VALUES (2,  1,1,'group',1,3, 2,0,1,3, '2026-04-06 10:00+08','completed');
+INSERT INTO matches VALUES (3,  1,1,'group',2,3, 2,1,2,3, '2026-04-07 10:00+08','completed');
+-- Group B
+INSERT INTO matches VALUES (4,  1,2,'group',4,5, 1,2,5,4, '2026-04-05 14:00+08','completed');
+INSERT INTO matches VALUES (5,  1,2,'group',4,6, 0,2,6,4, '2026-04-06 14:00+08','completed');
+INSERT INTO matches VALUES (6,  1,2,'group',5,6, NULL,NULL,NULL,NULL, '2026-04-21 14:00+08','live');
+-- Playoffs
+INSERT INTO matches VALUES (7,  1,NULL,'semi',  1,5,  NULL,NULL,NULL,NULL,'2026-04-24 10:00+08','upcoming');
+INSERT INTO matches VALUES (8,  1,NULL,'semi',  2,6,  NULL,NULL,NULL,NULL,'2026-04-24 14:00+08','upcoming');
+INSERT INTO matches VALUES (9,  1,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,NULL,'2026-04-28 10:00+08','upcoming');
+INSERT INTO matches VALUES (10, 1,NULL,'final', NULL,NULL,NULL,NULL,NULL,NULL,'2026-04-28 14:00+08','upcoming');
 
 -- ============================================================
--- MATCHES - Dota 2 The International 2025 (tournament_id = 3)
+-- MATCHES - CS2 (tournament 2, ongoing)
 -- ============================================================
-
--- Group A (group_id = 5)
--- Spirit vs OG → Spirit wins 2-0
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (11, 3, 5, 'group', 13, 14, 2, 0, 13, 14, '2025-10-02 10:00:00+00', 'completed');
-
--- Spirit vs Secret → Spirit wins 2-1
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (12, 3, 5, 'group', 13, 15, 2, 1, 13, 15, '2025-10-02 13:00:00+00', 'completed');
-
--- OG vs Secret → OG wins 2-1
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (13, 3, 5, 'group', 14, 15, 2, 1, 14, 15, '2025-10-03 10:00:00+00', 'completed');
-
--- Group B (group_id = 6)
--- PSG.LGD vs Tundra → LGD wins 2-0
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (14, 3, 6, 'group', 16, 17, 2, 0, 16, 17, '2025-10-02 11:00:00+00', 'completed');
-
--- GG vs PSG.LGD → GG wins 2-1
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (15, 3, 6, 'group', 18, 16, 2, 1, 18, 16, '2025-10-02 14:00:00+00', 'completed');
-
--- GG vs Tundra → GG wins 2-0
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (16, 3, 6, 'group', 18, 17, 2, 0, 18, 17, '2025-10-03 11:00:00+00', 'completed');
-
--- Playoffs Dota 2: A1(Spirit) vs B2(LGD), B1(GG) vs A2(OG)
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (17, 3, NULL, 'semi', 13, 16, NULL, NULL, NULL, NULL, '2025-10-08 10:00:00+00', 'upcoming');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (18, 3, NULL, 'semi', 18, 14, NULL, NULL, NULL, NULL, '2025-10-08 14:00:00+00', 'upcoming');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (19, 3, NULL, 'bronze', NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-12 10:00:00+00', 'upcoming');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (20, 3, NULL, 'final', NULL, NULL, NULL, NULL, NULL, NULL, '2025-10-13 14:00:00+00', 'upcoming');
+-- Group A
+INSERT INTO matches VALUES (11, 2,3,'group',7,8,  2,0,7,8,  '2026-04-12 10:00+08','completed');
+INSERT INTO matches VALUES (12, 2,3,'group',7,9,  2,1,7,9,  '2026-04-13 10:00+08','completed');
+INSERT INTO matches VALUES (13, 2,3,'group',8,9,  1,2,9,8,  '2026-04-14 10:00+08','completed');
+-- Group B
+INSERT INTO matches VALUES (14, 2,4,'group',10,11,2,1,10,11,'2026-04-12 14:00+08','completed');
+INSERT INTO matches VALUES (15, 2,4,'group',10,12,2,0,10,12,'2026-04-13 14:00+08','completed');
+INSERT INTO matches VALUES (16, 2,4,'group',11,12,NULL,NULL,NULL,NULL,'2026-04-20 14:00+08','live');
+-- Playoffs
+INSERT INTO matches VALUES (17, 2,NULL,'semi',  7,11, NULL,NULL,NULL,NULL,'2026-04-22 10:00+08','upcoming');
+INSERT INTO matches VALUES (18, 2,NULL,'semi',  10,9, NULL,NULL,NULL,NULL,'2026-04-22 14:00+08','upcoming');
+INSERT INTO matches VALUES (19, 2,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,NULL,'2026-04-24 10:00+08','upcoming');
+INSERT INTO matches VALUES (20, 2,NULL,'final', NULL,NULL,NULL,NULL,NULL,NULL,'2026-04-24 14:00+08','upcoming');
 
 -- ============================================================
--- MATCHES - Table Tennis ITTF (tournament_id = 6, completed)
+-- MATCHES - Dota 2 (tournament 3, upcoming — no matches yet)
 -- ============================================================
+INSERT INTO matches VALUES (21, 3,5,'group',13,14,NULL,NULL,NULL,NULL,'2026-05-02 10:00+08','upcoming');
+INSERT INTO matches VALUES (22, 3,5,'group',13,15,NULL,NULL,NULL,NULL,'2026-05-03 10:00+08','upcoming');
+INSERT INTO matches VALUES (23, 3,5,'group',14,15,NULL,NULL,NULL,NULL,'2026-05-04 10:00+08','upcoming');
+INSERT INTO matches VALUES (24, 3,6,'group',16,17,NULL,NULL,NULL,NULL,'2026-05-02 14:00+08','upcoming');
+INSERT INTO matches VALUES (25, 3,6,'group',16,18,NULL,NULL,NULL,NULL,'2026-05-03 14:00+08','upcoming');
+INSERT INTO matches VALUES (26, 3,6,'group',17,18,NULL,NULL,NULL,NULL,'2026-05-04 14:00+08','upcoming');
+INSERT INTO matches VALUES (27, 3,NULL,'semi',  NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-10 10:00+08','upcoming');
+INSERT INTO matches VALUES (28, 3,NULL,'semi',  NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-10 14:00+08','upcoming');
+INSERT INTO matches VALUES (29, 3,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-14 10:00+08','upcoming');
+INSERT INTO matches VALUES (30, 3,NULL,'final', NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-14 14:00+08','upcoming');
 
--- Group A (group_id = 11)
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (21, 6, 11, 'group', 31, 32, 3, 1, 31, 32, '2025-08-02 09:00:00+00', 'completed');
+-- ============================================================
+-- MATCHES - Table Tennis (tournament 4, completed)
+-- ============================================================
+-- Group A
+INSERT INTO matches VALUES (31, 4,7,'group',19,20,3,1,19,20,'2026-03-02 10:00+08','completed');
+INSERT INTO matches VALUES (32, 4,7,'group',19,21,3,0,19,21,'2026-03-03 10:00+08','completed');
+INSERT INTO matches VALUES (33, 4,7,'group',20,21,3,2,20,21,'2026-03-04 10:00+08','completed');
+-- Group B
+INSERT INTO matches VALUES (34, 4,8,'group',22,23,3,1,22,23,'2026-03-02 14:00+08','completed');
+INSERT INTO matches VALUES (35, 4,8,'group',22,24,3,2,22,24,'2026-03-03 14:00+08','completed');
+INSERT INTO matches VALUES (36, 4,8,'group',23,24,3,0,23,24,'2026-03-04 14:00+08','completed');
+-- Playoffs: A1=19, A2=20, B1=22, B2=23
+INSERT INTO matches VALUES (37, 4,NULL,'semi',  19,23,4,2,19,23,'2026-03-07 10:00+08','completed');
+INSERT INTO matches VALUES (38, 4,NULL,'semi',  22,20,4,3,22,20,'2026-03-07 14:00+08','completed');
+INSERT INTO matches VALUES (39, 4,NULL,'bronze',20,23,4,1,20,23,'2026-03-09 10:00+08','completed');
+INSERT INTO matches VALUES (40, 4,NULL,'final', 19,22,4,2,19,22,'2026-03-10 14:00+08','completed');
 
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (22, 6, 11, 'group', 31, 33, 3, 0, 31, 33, '2025-08-02 11:00:00+00', 'completed');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (23, 6, 11, 'group', 32, 33, 3, 2, 32, 33, '2025-08-03 09:00:00+00', 'completed');
-
--- Group B (group_id = 12)
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (24, 6, 12, 'group', 34, 35, 3, 1, 34, 35, '2025-08-02 10:00:00+00', 'completed');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (25, 6, 12, 'group', 34, 36, 3, 2, 34, 36, '2025-08-02 13:00:00+00', 'completed');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (26, 6, 12, 'group', 35, 36, 3, 1, 35, 36, '2025-08-03 10:00:00+00', 'completed');
-
--- Playoffs TT: A1(Fan) vs B2(Harimoto), B1(Xu) vs A2(Ma)
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (27, 6, NULL, 'semi', 31, 35, 4, 2, 31, 35, '2025-08-05 10:00:00+00', 'completed');
-
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (28, 6, NULL, 'semi', 34, 32, 4, 3, 34, 32, '2025-08-05 13:00:00+00', 'completed');
-
--- Bronze: Harimoto vs Ma
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (29, 6, NULL, 'bronze', 35, 32, 4, 1, 35, 32, '2025-08-07 10:00:00+00', 'completed');
-
--- Final: Fan vs Xu
-INSERT INTO matches (id, tournament_id, group_id, stage, team1_id, team2_id, score1, score2, winner_id, loser_id, match_date, status)
-VALUES (30, 6, NULL, 'final', 31, 34, 4, 2, 31, 34, '2025-08-08 14:00:00+00', 'completed');
-
-SELECT setval('matches_id_seq', 30);
+SELECT setval('matches_id_seq', 40);
