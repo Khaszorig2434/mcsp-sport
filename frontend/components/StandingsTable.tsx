@@ -14,7 +14,7 @@ export default function StandingsTable({ groups }: Props) {
     <div className="space-y-8">
       {groups.map((group) => (
         <div key={group.group_id}>
-          <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-2">
+          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">
             Group {group.group_name}
           </h3>
 
@@ -53,7 +53,7 @@ export default function StandingsTable({ groups }: Props) {
                           )} />
                           <span className={cn(
                             'font-semibold tabular-nums',
-                            isTop2 ? 'text-white' : 'text-gray-500',
+                            isTop2 ? 'text-foreground' : 'text-muted',
                           )}>
                             {team.rank}
                           </span>
@@ -65,7 +65,7 @@ export default function StandingsTable({ groups }: Props) {
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             'font-medium',
-                            isTop2 ? 'text-white' : 'text-gray-400',
+                            isTop2 ? 'text-foreground' : 'text-muted',
                           )}>
                             {team.team_name}
                           </span>
@@ -98,7 +98,7 @@ export default function StandingsTable({ groups }: Props) {
                       <td className="text-center px-3 py-3 tabular-nums font-semibold text-loss">
                         {team.losses}
                       </td>
-                      <td className="text-center px-3 py-3 tabular-nums font-bold text-white">
+                      <td className="text-center px-3 py-3 tabular-nums font-bold text-foreground">
                         {team.points}
                       </td>
                       <td className={cn(

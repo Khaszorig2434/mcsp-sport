@@ -3,6 +3,7 @@ import { Zap, Clock, Trophy } from 'lucide-react';
 import { api } from '@/lib/api';
 import TournamentCard from '@/components/TournamentCard';
 import MatchCard from '@/components/MatchCard';
+import HeroSection from '@/components/HeroSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,17 +88,9 @@ async function TournamentsList() {
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">
-          Tournament Dashboard
-        </h1>
-        <p className="text-gray-500 text-sm mt-1">
-          Live scores, brackets, and standings across all sports.
-        </p>
-      </div>
-
+    <>
+      <HeroSection />
+    <div className="max-w-screen-xl mx-auto px-4 py-8 space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Live + Upcoming */}
         <div className="lg:col-span-1 space-y-6">
@@ -127,6 +120,7 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

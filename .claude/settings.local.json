@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find . -type f \\\\\\( -name \"*.tsx\" -o -name \"*.ts\" -o -name \"*.js\" -o -name \"*.jsx\" -o -name \"*.sql\" \\\\\\) -exec wc -l {} +)",
+      "Bash(npm install *)"
+    ]
+  }
+}

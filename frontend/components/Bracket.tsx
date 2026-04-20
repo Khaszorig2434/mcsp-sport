@@ -109,7 +109,7 @@ function BracketMatchCard({
       )}>
         <span className={cn(
           'font-semibold uppercase tracking-wide',
-          highlight ? 'text-brand' : 'text-gray-400',
+          highlight ? 'text-brand' : 'text-muted',
         )}>
           {label}
         </span>
@@ -175,7 +175,7 @@ function BracketTeamRow({
           isWinner  && 'text-win font-semibold',
           isLoser   && 'text-gray-500 line-through decoration-gray-600',
           isPending && 'text-gray-600 italic',
-          !isWinner && !isLoser && !isPending && 'text-gray-200',
+          !isWinner && !isLoser && !isPending && 'text-foreground',
         )}>
           {name}
         </span>
@@ -186,7 +186,7 @@ function BracketTeamRow({
           'text-base font-bold tabular-nums ml-3 shrink-0',
           isWinner  && 'text-win',
           isLoser   && 'text-gray-600',
-          !isWinner && !isLoser && 'text-white',
+          !isWinner && !isLoser && 'text-foreground',
         )}>
           {score}
         </span>
@@ -223,25 +223,25 @@ function BracketConnector() {
         <line
           x1={0} y1={arm}
           x2={w / 2} y2={arm}
-          stroke="#2a2d3e" strokeWidth={2}
+          stroke="rgb(var(--surface-border))" strokeWidth={2}
         />
         {/* Horizontal arm from SF2 */}
         <line
           x1={0} y1={totalH - arm}
           x2={w / 2} y2={totalH - arm}
-          stroke="#2a2d3e" strokeWidth={2}
+          stroke="rgb(var(--surface-border))" strokeWidth={2}
         />
         {/* Vertical bar joining the two arms */}
         <line
           x1={w / 2} y1={arm}
           x2={w / 2} y2={totalH - arm}
-          stroke="#2a2d3e" strokeWidth={2}
+          stroke="rgb(var(--surface-border))" strokeWidth={2}
         />
         {/* Horizontal arm out to Final */}
         <line
           x1={w / 2} y1={midH}
           x2={w} y2={midH}
-          stroke="#2a2d3e" strokeWidth={2}
+          stroke="rgb(var(--surface-border))" strokeWidth={2}
         />
       </svg>
     </div>

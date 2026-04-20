@@ -38,8 +38,12 @@ export default function TournamentTabs({ tournamentId }: { tournamentId: string 
         setStandings(data);
       }
       if (tab === 'bracket') {
-        const data = await api.bracket.get(tournamentId);
-        setBracket(data);
+        const [bracketData, standingsData] = await Promise.all([
+          api.bracket.get(tournamentId),
+          api.standings.get(tournamentId),
+        ]);
+        setBracket(bracketData);
+        setStandings(standingsData);
       }
     } catch (e) {
       setError('Failed to load data. Is the backend running?');
@@ -67,8 +71,8 @@ export default function TournamentTabs({ tournamentId }: { tournamentId: string 
             className={cn(
               'px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors',
               activeTab === tab.id
-                ? 'border-b-2 border-brand text-white -mb-px'
-                : 'text-gray-400 hover:text-gray-200 border-b-2 border-transparent',
+                ? 'border-b-2 border-brand text-foreground -mb-px'
+                : 'text-muted hover:text-foreground border-b-2 border-transparent',
             )}
           >
             {tab.label}
@@ -96,7 +100,7 @@ export default function TournamentTabs({ tournamentId }: { tournamentId: string 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Recent / Live matches */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
               Recent & Live Matches
             </h3>
             {matches.length === 0 ? (
@@ -114,7 +118,7 @@ export default function TournamentTabs({ tournamentId }: { tournamentId: string 
 
           {/* Standings preview */}
           <div>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
               Group Standings
             </h3>
             <StandingsTable groups={standings} />
@@ -133,11 +137,80 @@ export default function TournamentTabs({ tournamentId }: { tournamentId: string 
       )}
 
       {/* ── Bracket ───────────────────────────────────────── */}
-      {activeTab === 'bracket' && !loading && !error && bracket && (
-        <Bracket bracket={bracket} />
-      )}
-      {activeTab === 'bracket' && !loading && !error && !bracket && (
-        <p className="text-gray-500 text-sm">Bracket not available yet.</p>
+      {activeTab === 'bracket' && !loading && !error && (
+        <div className="space-y-8">
+          {/* Group stage standings */}
+          {standings.length > 0 && (
+            <div>
+              <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
+                Group Stage
+              </h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {standings.map((group) => (
+                  <div key={group.group_id} className="rounded-lg border border-surface-border overflow-hidden">
+                    <div className="px-4 py-2 bg-surface border-b border-surface-border">
+                      <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+                        Group {group.group_name}
+                      </span>
+                    </div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-xs text-muted border-b border-surface-border">
+                          <th className="text-left px-4 py-2">#</th>
+                          <th className="text-left px-4 py-2">Team</th>
+                          <th className="text-center px-3 py-2">W</th>
+                          <th className="text-center px-3 py-2">L</th>
+                          <th className="text-center px-3 py-2">Pts</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {group.teams.map((team) => (
+                          <tr
+                            key={team.team_id}
+                            className="border-b border-surface-border/50 last:border-0 bg-surface-card"
+                          >
+                            <td className="px-4 py-2.5">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-1 h-5 rounded-full ${team.rank <= 2 ? 'bg-brand' : 'bg-transparent'}`} />
+                                <span className={`text-xs font-semibold ${team.rank <= 2 ? 'text-foreground' : 'text-muted'}`}>
+                                  {team.rank}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className={`font-medium text-sm ${team.rank <= 2 ? 'text-foreground' : 'text-muted'}`}>
+                                {team.team_name}
+                              </span>
+                              {team.rank <= 2 && (
+                                <span className="ml-2 text-xs text-brand font-medium">↑ Advances</span>
+                              )}
+                            </td>
+                            <td className="text-center px-3 py-2.5 text-win font-semibold text-sm">{team.wins}</td>
+                            <td className="text-center px-3 py-2.5 text-loss font-semibold text-sm">{team.losses}</td>
+                            <td className="text-center px-3 py-2.5 font-bold text-foreground text-sm">{team.points}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Playoff bracket */}
+          {bracket
+            ? (
+              <div>
+                <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
+                  Playoffs
+                </h3>
+                <Bracket bracket={bracket} />
+              </div>
+            )
+            : <p className="text-muted text-sm">Bracket not available yet.</p>
+          }
+        </div>
       )}
     </div>
   );
@@ -171,13 +244,13 @@ function MatchesTab({ matches }: { matches: Match[] }) {
           }
           return (
             <section key={stage}>
-              <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+              <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
                 {stageLabel(stage)}
               </h3>
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {Object.entries(subGroups).sort().map(([groupName, gMatches]) => (
                   <div key={groupName}>
-                    <p className="text-xs text-gray-500 mb-2 ml-1">Group {groupName}</p>
+                    <p className="text-xs text-muted mb-2 ml-1">Group {groupName}</p>
                     <div className="space-y-3">
                       {gMatches.map((m) => <MatchCard key={m.id} match={m} />)}
                     </div>
@@ -190,10 +263,10 @@ function MatchesTab({ matches }: { matches: Match[] }) {
 
         return (
           <section key={stage}>
-            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-4">
               {stageLabel(stage)}
             </h3>
-            <div className="space-y-3 max-w-lg">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
               {group.map((m) => <MatchCard key={m.id} match={m} />)}
             </div>
           </section>

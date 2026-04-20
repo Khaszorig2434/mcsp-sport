@@ -8,9 +8,9 @@ interface Props {
 }
 
 const statusStyles: Record<string, string> = {
-  ongoing:   'bg-live/20 text-live border border-live/30',
-  upcoming:  'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-  completed: 'bg-gray-700/50 text-gray-400 border border-gray-600/20',
+  ongoing:   'bg-brand-magenta/10 text-brand-magenta border border-brand-magenta/30',
+  upcoming:  'bg-brand/10 text-brand border border-brand/20',
+  completed: 'bg-gray-100 text-gray-500 border border-gray-200 dark:bg-gray-700/50 dark:text-gray-400 dark:border-gray-600/20',
 };
 
 const statusLabel: Record<string, string> = {
@@ -39,7 +39,7 @@ export default function TournamentCard({ tournament: t }: Props) {
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">
               {t.sport_name} · {genderLabel(t.gender)}
             </p>
-            <h3 className="font-semibold text-white text-sm leading-tight group-hover:text-brand transition-colors line-clamp-2">
+            <h3 className="font-semibold text-foreground text-sm leading-tight group-hover:text-brand transition-colors line-clamp-2">
               {t.name}
             </h3>
           </div>

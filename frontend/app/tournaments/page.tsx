@@ -17,10 +17,10 @@ export default async function TournamentsPage() {
   const completed = tournaments.filter((t) => t.status === 'completed');
 
   return (
-    <div className="space-y-8">
+    <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-8">
       <div className="flex items-center gap-3">
         <Trophy size={22} className="text-brand" />
-        <h1 className="text-2xl font-bold text-white">All Tournaments</h1>
+        <h1 className="text-2xl font-bold text-foreground">All Tournaments</h1>
       </div>
 
       {ongoing.length > 0 && (
@@ -55,7 +55,7 @@ function Section({
   accent:   'live' | 'blue' | 'gray';
   children: React.ReactNode;
 }) {
-  const dotColor = accent === 'live' ? 'bg-live' : accent === 'blue' ? 'bg-blue-400' : 'bg-gray-500';
+  const dotColor = accent === 'live' ? 'bg-live' : accent === 'blue' ? 'bg-brand' : 'bg-gray-400';
   return (
     <section>
       <div className="flex items-center gap-2 mb-3">

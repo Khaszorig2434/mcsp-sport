@@ -5,6 +5,22 @@
 @layer base {
   :root {
     --font-inter: 'Inter', system-ui, sans-serif;
+    /* Light theme */
+    --surface:        248 249 251;
+    --surface-card:   255 255 255;
+    --surface-hover:  241 245 249;
+    --surface-border: 226 232 240;
+    --foreground:     17 24 39;
+    --muted:          107 114 128;
+  }
+
+  .dark {
+    --surface:        14 28 57;      /* Midnight Navy #0E1C39 */
+    --surface-card:   20 37 74;      /* Navy +lighter */
+    --surface-hover:  26 48 95;
+    --surface-border: 35 55 105;
+    --foreground:     255 255 255;
+    --muted:          148 163 184;
   }
 
   * {
@@ -12,7 +28,7 @@
   }
 
   body {
-    @apply bg-surface text-gray-100 antialiased;
+    @apply bg-surface text-foreground antialiased;
     font-family: var(--font-inter);
   }
 

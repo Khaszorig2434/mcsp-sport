@@ -20,12 +20,12 @@ export default async function TournamentPage({ params }: PageProps) {
 
   const statusStyles: Record<string, string> = {
     ongoing:   'bg-live/20 text-live border border-live/30',
-    upcoming:  'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-    completed: 'bg-gray-700/50 text-gray-400 border border-gray-600/20',
+    upcoming:  'bg-brand/10 text-brand border border-brand/20',
+    completed: 'bg-gray-100 text-gray-500 border border-gray-200 dark:bg-gray-700/50 dark:text-gray-400 dark:border-gray-600/20',
   };
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-screen-xl mx-auto px-4 py-6 space-y-6">
       {/* ── Hero ──────────────────────────────────────────── */}
       <div className="rounded-xl bg-surface-card border border-surface-border p-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
@@ -48,7 +48,7 @@ export default async function TournamentPage({ params }: PageProps) {
               </span>
             </div>
 
-            <h1 className="text-xl sm:text-2xl font-bold text-white leading-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground leading-tight">
               {tournament.name}
             </h1>
 

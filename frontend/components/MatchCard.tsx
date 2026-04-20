@@ -114,7 +114,7 @@ function TeamRow({
         'font-medium text-sm truncate',
         isWinner && 'text-win',
         isLoser  && 'text-gray-500',
-        !isWinner && !isLoser && 'text-white',
+        !isWinner && !isLoser && 'text-foreground',
       )}>
         {shortName ?? name}
       </span>
@@ -123,7 +123,7 @@ function TeamRow({
           'font-bold text-base min-w-[20px] text-center',
           isWinner && 'text-win',
           isLoser  && 'text-gray-500',
-          !isWinner && !isLoser && 'text-white',
+          !isWinner && !isLoser && 'text-foreground',
         )}>
           {score}
         </span>
@@ -141,14 +141,14 @@ function TeamRowFull({
     <div className={cn(
       'flex items-center justify-between rounded-lg px-3 py-2',
       isWinner && 'bg-win/10',
-      isLoser  && 'bg-gray-800/40',
+      isLoser  && 'bg-gray-100 dark:bg-gray-800/40',
       !isWinner && !isLoser && 'bg-surface/50',
     )}>
       <span className={cn(
         'font-medium text-sm',
         isWinner && 'text-win',
         isLoser  && 'text-gray-500',
-        !isWinner && !isLoser && 'text-white',
+        !isWinner && !isLoser && 'text-foreground',
       )}>
         {name}
         {isWinner && <span className="ml-2 text-xs text-win/70">✓ WIN</span>}
@@ -158,7 +158,7 @@ function TeamRowFull({
           'font-bold text-xl tabular-nums',
           isWinner && 'text-win',
           isLoser  && 'text-gray-500',
-          !isWinner && !isLoser && 'text-white',
+          !isWinner && !isLoser && 'text-foreground',
         )}>
           {score}
         </span>
