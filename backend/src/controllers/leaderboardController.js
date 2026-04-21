@@ -10,16 +10,17 @@ const SPORT_POINTS = {
   'Dota 2':       [8,  5, 2, 0.5],
 };
 
+// Sports that use individual_placements table instead of bracket matches
+const INDIVIDUAL_SPORTS = ['Table Tennis', 'Chess', 'Darts'];
+
 // GET /api/leaderboard
 async function getLeaderboard(req, res) {
   try {
-    // Fetch all completed final + bronze matches with sport and team info
+    // Bracket sports: read from completed final + bronze matches
     const { rows } = await db.query(`
       SELECT
-        m.id, m.stage, m.status,
+        m.stage,
         m.winner_id, m.loser_id,
-        t1.id AS team1_id, t1.name AS team1_name,
-        t2.id AS team2_id, t2.name AS team2_name,
         wt.id AS winner_team_id, wt.name AS winner_name,
         lt.id AS loser_team_id,  lt.name AS loser_name,
         tn.id AS tournament_id, tn.name AS tournament_name, tn.gender,
@@ -29,22 +30,33 @@ async function getLeaderboard(req, res) {
       JOIN sports      s  ON s.id  = tn.sport_id
       LEFT JOIN teams wt  ON wt.id = m.winner_id
       LEFT JOIN teams lt  ON lt.id = m.loser_id
-      LEFT JOIN teams t1  ON t1.id = m.team1_id
-      LEFT JOIN teams t2  ON t2.id = m.team2_id
       WHERE m.stage IN ('final', 'bronze')
         AND m.status = 'completed'
         AND m.winner_id IS NOT NULL
+        AND s.name NOT IN (${INDIVIDUAL_SPORTS.map((_, i) => `$${i + 1}`).join(',')})
       ORDER BY tn.id, m.stage
+    `, INDIVIDUAL_SPORTS);
+
+    // Individual sports: read from individual_placements table
+    const { rows: indivRows } = await db.query(`
+      SELECT
+        ip.place, ip.player_name, ip.team_id,
+        t.name AS team_name,
+        tn.id AS tournament_id, tn.name AS tournament_name, tn.gender,
+        s.name AS sport_name
+      FROM individual_placements ip
+      JOIN tournaments tn ON tn.id = ip.tournament_id
+      JOIN sports      s  ON s.id  = tn.sport_id
+      LEFT JOIN teams  t  ON t.id  = ip.team_id
+      ORDER BY tn.id, ip.place
     `);
 
-    // Build per-tournament placements: { [tournamentId]: { 1: team, 2: team, 3: team, 4: team } }
+    // Build per-tournament bracket placements
     const byTournament = {};
-
     for (const row of rows) {
       const tid = row.tournament_id;
       if (!byTournament[tid]) {
         byTournament[tid] = {
-          tournament_id:   tid,
           tournament_name: row.tournament_name,
           sport_name:      row.sport_name,
           gender:          row.gender,
@@ -53,55 +65,65 @@ async function getLeaderboard(req, res) {
       }
       const t = byTournament[tid];
       if (row.stage === 'final') {
-        t.placements[1] = { id: row.winner_team_id, name: row.winner_name };
-        t.placements[2] = { id: row.loser_team_id,  name: row.loser_name  };
+        t.placements[1] = { name: row.winner_name };
+        t.placements[2] = { name: row.loser_name  };
       } else if (row.stage === 'bronze') {
-        t.placements[3] = { id: row.winner_team_id, name: row.winner_name };
-        t.placements[4] = { id: row.loser_team_id,  name: row.loser_name  };
+        t.placements[3] = { name: row.winner_name };
+        t.placements[4] = { name: row.loser_name  };
       }
     }
 
-    // Seed all team names with 0 so every team appears even without placements
+    // Build per-tournament individual placements
+    const byTournamentIndiv = {};
+    for (const row of indivRows) {
+      const tid = row.tournament_id;
+      if (!byTournamentIndiv[tid]) {
+        byTournamentIndiv[tid] = {
+          tournament_name: row.tournament_name,
+          sport_name:      row.sport_name,
+          gender:          row.gender,
+          placements:      {},
+        };
+      }
+      byTournamentIndiv[tid].placements[row.place] = {
+        name:        row.team_name,
+        player_name: row.player_name,
+      };
+    }
+
+    // Seed all team names with 0
     const { rows: allTeams } = await db.query(`SELECT DISTINCT name FROM teams ORDER BY name`);
     const teamMap = {};
     for (const t of allTeams) {
       teamMap[t.name] = { team_name: t.name, total_points: 0, gold: 0, silver: 0, bronze: 0, results: [] };
     }
 
-    for (const t of Object.values(byTournament)) {
-      const pointsTable = SPORT_POINTS[t.sport_name] ?? [0, 0, 0, 0];
-
+    const applyPlacements = (tournamentData) => {
+      const pointsTable = SPORT_POINTS[tournamentData.sport_name] ?? [0, 0, 0, 0];
       for (let place = 1; place <= 4; place++) {
-        const team = t.placements[place];
-        if (!team) continue;
-
+        const entry = tournamentData.placements[place];
+        if (!entry || !entry.name) continue;
         const pts = pointsTable[place - 1] ?? 0;
-
-        if (!teamMap[team.name]) {
-          teamMap[team.name] = {
-            team_name:   team.name,
-            total_points: 0,
-            gold:   0,
-            silver: 0,
-            bronze: 0,
-            results: [],
-          };
+        if (!teamMap[entry.name]) {
+          teamMap[entry.name] = { team_name: entry.name, total_points: 0, gold: 0, silver: 0, bronze: 0, results: [] };
         }
-
-        teamMap[team.name].total_points += pts;
-        if (place === 1) teamMap[team.name].gold   += 1;
-        if (place === 2) teamMap[team.name].silver  += 1;
-        if (place === 3) teamMap[team.name].bronze  += 1;
-
-        teamMap[team.name].results.push({
-          tournament_name: t.tournament_name,
-          sport_name:      t.sport_name,
-          gender:          t.gender,
+        teamMap[entry.name].total_points += pts;
+        if (place === 1) teamMap[entry.name].gold   += 1;
+        if (place === 2) teamMap[entry.name].silver  += 1;
+        if (place === 3) teamMap[entry.name].bronze  += 1;
+        teamMap[entry.name].results.push({
+          tournament_name: tournamentData.tournament_name,
+          sport_name:      tournamentData.sport_name,
+          gender:          tournamentData.gender,
           place,
           points:          pts,
+          player_name:     entry.player_name ?? null,
         });
       }
-    }
+    };
+
+    for (const t of Object.values(byTournament))      applyPlacements(t);
+    for (const t of Object.values(byTournamentIndiv)) applyPlacements(t);
 
     // Sort: total_points DESC → gold DESC → silver DESC
     const leaderboard = Object.values(teamMap).sort((a, b) => {

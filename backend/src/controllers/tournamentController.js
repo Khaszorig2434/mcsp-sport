@@ -113,41 +113,51 @@ async function getTournament(req, res) {
   }
 }
 
-// POST /api/tournaments/:id/placements
-// Body: { place1, place2, place3, place4 } — team IDs
-async function setPlacements(req, res) {
+// GET /api/tournaments/:id/individual-placements
+async function getIndividualPlacements(req, res) {
   try {
     const { id } = req.params;
-    const { place1, place2, place3, place4 } = req.body;
-    if (!place1 || !place2 || !place3 || !place4) {
-      return res.status(400).json({ error: 'All four placements are required' });
-    }
-
-    const { rows: stageMeta } = await db.query(
-      `SELECT id, stage FROM matches WHERE tournament_id = $1 AND stage IN ('final','bronze') ORDER BY stage`,
+    const { rows } = await db.query(
+      `SELECT ip.place, ip.player_name, ip.team_id, t.name AS team_name
+       FROM individual_placements ip
+       LEFT JOIN teams t ON t.id = ip.team_id
+       WHERE ip.tournament_id = $1
+       ORDER BY ip.place`,
       [id]
     );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch placements' });
+  }
+}
 
-    const finalRow  = stageMeta.find((r) => r.stage === 'final');
-    const bronzeRow = stageMeta.find((r) => r.stage === 'bronze');
-    if (!finalRow || !bronzeRow) {
-      return res.status(404).json({ error: 'Final or bronze match not found for this tournament' });
+// POST /api/tournaments/:id/individual-placements
+// Body: [{ place, player_name, team_id }, ...]
+async function setIndividualPlacements(req, res) {
+  try {
+    const { id } = req.params;
+    const entries = req.body; // array of { place, player_name, team_id }
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ error: 'Expected array of placement entries' });
     }
 
-    await db.query(
-      `UPDATE matches SET team1_id=$1, team2_id=$2, score1=1, score2=0, winner_id=$1, loser_id=$2, status='completed' WHERE id=$3`,
-      [place1, place2, finalRow.id]
-    );
-    await db.query(
-      `UPDATE matches SET team1_id=$1, team2_id=$2, score1=1, score2=0, winner_id=$1, loser_id=$2, status='completed' WHERE id=$3`,
-      [place3, place4, bronzeRow.id]
-    );
+    // Upsert each placement
+    for (const { place, player_name, team_id } of entries) {
+      await db.query(
+        `INSERT INTO individual_placements (tournament_id, place, player_name, team_id)
+         VALUES ($1,$2,$3,$4)
+         ON CONFLICT (tournament_id, place)
+         DO UPDATE SET player_name=$3, team_id=$4`,
+        [id, place, player_name, team_id || null]
+      );
+    }
 
     res.json({ success: true });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to set placements' });
+    res.status(500).json({ error: 'Failed to save placements' });
   }
 }
 
-module.exports = { listTournaments, getTournament, setPlacements };
+module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements };

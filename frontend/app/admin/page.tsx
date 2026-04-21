@@ -18,7 +18,10 @@ interface AddState  { stage: string; team1_id: string; team2_id: string; match_d
 
 const emptyAdd: AddState = { stage: 'group', team1_id: '', team2_id: '', match_date: '', status: 'upcoming', group_id: '' };
 
-/* ── Placement Panel ── */
+/* ── Individual Placement Panel ── */
+interface PlacementEntry { player_name: string; team_id: string }
+const emptyEntry = (): PlacementEntry => ({ player_name: '', team_id: '' });
+
 function PlacementPanel({
   tournamentId, allTeams, onSaved, onError,
 }: {
@@ -27,54 +30,73 @@ function PlacementPanel({
   onSaved: () => void;
   onError: () => void;
 }) {
-  const [form, setForm] = useState({ place1: '', place2: '', place3: '', place4: '' });
+  const [entries, setEntries] = useState<PlacementEntry[]>([
+    emptyEntry(), emptyEntry(), emptyEntry(), emptyEntry(),
+  ]);
   const [saving, setSaving] = useState(false);
 
-  const medals = [
-    { key: 'place1' as const, label: '🥇 1st Place (Gold)'   },
-    { key: 'place2' as const, label: '🥈 2nd Place (Silver)' },
-    { key: 'place3' as const, label: '🥉 3rd Place (Bronze)' },
-    { key: 'place4' as const, label: '4th Place'             },
-  ];
+  // Load existing placements on mount
+  useEffect(() => {
+    api.tournaments.getIndividualPlacements(tournamentId).then((rows) => {
+      if (!rows.length) return;
+      setEntries((prev) => prev.map((e, i) => {
+        const row = rows.find((r) => r.place === i + 1);
+        return row ? { player_name: row.player_name, team_id: row.team_id ? String(row.team_id) : '' } : e;
+      }));
+    }).catch(() => {});
+  }, [tournamentId]);
 
-  const usedIds = Object.values(form).filter(Boolean);
+  const medals = ['🥇 1st (Gold)', '🥈 2nd (Silver)', '🥉 3rd (Bronze)', '4th Place'];
+
+  const update = (i: number, field: keyof PlacementEntry, val: string) => {
+    setEntries((prev) => prev.map((e, idx) => idx === i ? { ...e, [field]: val } : e));
+  };
 
   const submit = async () => {
-    if (!form.place1 || !form.place2 || !form.place3 || !form.place4) return;
+    const payload = entries.map((e, i) => ({
+      place:       i + 1,
+      player_name: e.player_name.trim(),
+      team_id:     e.team_id ? Number(e.team_id) : null,
+    })).filter((e) => e.player_name);
+
+    if (payload.length < 4) return;
     setSaving(true);
     try {
-      await api.tournaments.setPlacements(tournamentId, {
-        place1: Number(form.place1),
-        place2: Number(form.place2),
-        place3: Number(form.place3),
-        place4: Number(form.place4),
-      });
+      await api.tournaments.setIndividualPlacements(tournamentId, payload);
       onSaved();
     } catch { onError(); }
     finally  { setSaving(false); }
   };
+
+  const allFilled = entries.every((e) => e.player_name.trim());
 
   return (
     <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-bold text-brand uppercase tracking-widest">Final Standings</span>
         <div className="flex-1 h-px bg-surface-border" />
-        <span className="text-[10px] text-muted">Enter placements directly — no bracket needed</span>
+        <span className="text-[10px] text-muted">Enter player name + team for each placement</span>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {medals.map(({ key, label }) => (
-          <div key={key}>
-            <label className="label">{label}</label>
+      <div className="space-y-2">
+        {medals.map((label, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <span className="text-xs font-bold text-muted w-28 shrink-0">{label}</span>
+            <input
+              className="input flex-1"
+              placeholder="Player name"
+              value={entries[i].player_name}
+              onChange={(e) => update(i, 'player_name', e.target.value)}
+            />
             <select
-              className="input"
-              value={form[key]}
-              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+              className="input w-36 shrink-0"
+              value={entries[i].team_id}
+              onChange={(e) => update(i, 'team_id', e.target.value)}
             >
-              <option value="">— select team —</option>
-              {allTeams
-                .filter((t) => !usedIds.includes(String(t.id)) || form[key] === String(t.id))
-                .map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              <option value="">— Team —</option>
+              {allTeams.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
             </select>
           </div>
         ))}
@@ -82,7 +104,7 @@ function PlacementPanel({
 
       <button
         onClick={submit}
-        disabled={saving || !form.place1 || !form.place2 || !form.place3 || !form.place4}
+        disabled={saving || !allFilled}
         className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
       >
         {saving ? 'Saving…' : 'Save Placements'}

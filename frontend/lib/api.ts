@@ -23,13 +23,18 @@ export const api = {
     get(id: number | string) {
       return get<Tournament>(`/tournaments/${id}`);
     },
-    async setPlacements(id: number | string, body: { place1: number; place2: number; place3: number; place4: number }) {
-      const res = await fetch(`${API_BASE}/tournaments/${id}/placements`, {
+    getIndividualPlacements(id: number | string) {
+      return get<{ place: number; player_name: string; team_id: number | null; team_name: string | null }[]>(
+        `/tournaments/${id}/individual-placements`
+      );
+    },
+    async setIndividualPlacements(id: number | string, entries: { place: number; player_name: string; team_id: number | null }[]) {
+      const res = await fetch(`${API_BASE}/tournaments/${id}/individual-placements`, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(body),
+        body:    JSON.stringify(entries),
       });
-      if (!res.ok) throw new Error('Failed to set placements');
+      if (!res.ok) throw new Error('Failed to save placements');
       return res.json();
     },
   },
