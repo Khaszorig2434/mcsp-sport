@@ -61,8 +61,12 @@ async function getLeaderboard(req, res) {
       }
     }
 
-    // Aggregate points per team name
+    // Seed all team names with 0 so every team appears even without placements
+    const { rows: allTeams } = await db.query(`SELECT DISTINCT name FROM teams ORDER BY name`);
     const teamMap = {};
+    for (const t of allTeams) {
+      teamMap[t.name] = { team_name: t.name, total_points: 0, gold: 0, silver: 0, bronze: 0, results: [] };
+    }
 
     for (const t of Object.values(byTournament)) {
       const pointsTable = SPORT_POINTS[t.sport_name] ?? [0, 0, 0, 0];
