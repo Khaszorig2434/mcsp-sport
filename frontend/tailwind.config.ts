@@ -29,7 +29,8 @@ const config: Config = {
         live: '#950D4C',
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        sans:    ['var(--font-roboto)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-montserrat)', 'system-ui', 'sans-serif'],
       },
       animation: {
         'slide-in-left':  'slideInLeft 5s cubic-bezier(0.22, 1, 0.36, 1) both',

@@ -43,7 +43,7 @@ export default function HeroSection() {
       {/* ── Backdrop text ── */}
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none select-none animate-fade-in">
         <span
-          className="text-white font-black leading-none whitespace-nowrap tracking-tighter"
+          className="font-display text-white font-black leading-none whitespace-nowrap tracking-tighter"
           style={{ fontSize: 'clamp(72px, 17vw, 220px)', opacity: 0.07 }}
         >
           MCSP SPORT

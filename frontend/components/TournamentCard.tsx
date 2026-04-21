@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Calendar, MapPin, Zap } from 'lucide-react';
 import type { Tournament } from '@/lib/types';
-import { cn, formatDate, genderLabel, sportIcon } from '@/lib/utils';
+import { cn, formatDate, genderLabel } from '@/lib/utils';
+import SportIcon from '@/components/SportIcon';
 
 interface Props {
   tournament: Tournament;
@@ -32,9 +33,7 @@ export default function TournamentCard({ tournament: t }: Props) {
       {/* Header row */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-2xl shrink-0" title={t.sport_name}>
-            {sportIcon(t.sport_icon)}
-          </span>
+          <SportIcon icon={t.sport_icon} size={32} className="shrink-0" />
           <div className="min-w-0">
             <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">
               {t.sport_name} · {genderLabel(t.gender)}

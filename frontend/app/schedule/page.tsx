@@ -2,14 +2,15 @@ import { api } from '@/lib/api';
 import type { Match } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Calendar, Clock, ChevronRight } from 'lucide-react';
+import SportIcon from '@/components/SportIcon';
 
-const SPORT_ICON: Record<string, string> = {
-  'Basketball':   '🏀',
-  'Table Tennis': '🏓',
-  'Chess':        '♟️',
-  'Darts':        '🎯',
-  'CS2':          '🎮',
-  'Dota 2':       '🎮',
+const SPORT_ICON_KEY: Record<string, string> = {
+  'Basketball':   'basketball',
+  'Table Tennis': 'table-tennis',
+  'Chess':        'chess',
+  'Darts':        'darts',
+  'CS2':          'cs2',
+  'Dota 2':       'dota2',
 };
 
 const STAGE_LABEL: Record<string, string> = {
@@ -78,7 +79,7 @@ export default async function SchedulePage() {
         <div className="max-w-3xl mx-auto px-6 py-8">
           <div className="flex items-center gap-3 mb-1">
             <Calendar size={20} className="text-brand" />
-            <h1 className="text-2xl font-black text-foreground">Upcoming Schedule</h1>
+            <h1 className="font-display text-2xl font-black text-foreground">Upcoming Schedule</h1>
           </div>
           <p className="text-sm text-muted ml-8">
             {matches.length > 0
@@ -120,7 +121,7 @@ export default async function SchedulePage() {
                       {/* Top row: tournament + stage + time */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm">{SPORT_ICON[m.sport_name ?? ''] ?? '🏆'}</span>
+                          <SportIcon icon={SPORT_ICON_KEY[m.sport_name ?? ''] ?? ''} size={18} />
                           <span className="text-xs font-semibold text-muted">{m.tournament_name}</span>
                           <ChevronRight size={10} className="text-muted/50" />
                           <span className="text-[10px] font-bold text-brand uppercase tracking-wide">

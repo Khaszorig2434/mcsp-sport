@@ -2,15 +2,17 @@ import { api } from '@/lib/api';
 import type { LeaderboardEntry } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Trophy, Medal, ChevronDown } from 'lucide-react';
+import SportIcon from '@/components/SportIcon';
 
 const PLACE_LABEL: Record<number, string> = { 1: '1st', 2: '2nd', 3: '3rd', 4: '4th' };
-const SPORT_ICON: Record<string, string> = {
-  'Basketball':   '🏀',
-  'Table Tennis': '🏓',
-  'Chess':        '♟️',
-  'Darts':        '🎯',
-  'CS2':          '🎮',
-  'Dota 2':       '🎮',
+
+const SPORT_ICON_KEY: Record<string, string> = {
+  'Basketball':   'basketball',
+  'Table Tennis': 'table-tennis',
+  'Chess':        'chess',
+  'Darts':        'darts',
+  'CS2':          'cs2',
+  'Dota 2':       'dota2',
 };
 
 const SCORING_TABLE: Record<string, number[]> = {
@@ -85,9 +87,9 @@ export default async function LeaderboardPage() {
         <div className="relative z-10 max-w-5xl mx-auto px-6 py-12 text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-4">
             <Trophy size={14} className="text-yellow-400" />
-            <span className="text-xs font-semibold text-white/80 uppercase tracking-widest">Olympic Leaderboard</span>
+            <span className="text-xs font-semibold text-white/80 uppercase tracking-widest">Leaderboard</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-white mb-2">Overall Standings</h1>
+          <h1 className="font-display text-3xl md:text-4xl font-black text-white mb-2">Overall Standings</h1>
           <p className="text-white/50 text-sm">Points accumulated across all completed tournaments</p>
         </div>
       </div>
@@ -171,7 +173,7 @@ export default async function LeaderboardPage() {
                       <div className="flex flex-wrap gap-1.5">
                         {entry.results.map((r, i) => (
                           <div key={i} className="flex items-center gap-1 bg-surface-hover rounded-lg px-2 py-1">
-                            <span className="text-xs">{SPORT_ICON[r.sport_name] ?? '🏆'}</span>
+                            <SportIcon icon={SPORT_ICON_KEY[r.sport_name] ?? ''} size={16} />
                             <span className="text-[10px] text-muted">{r.sport_name}</span>
                             <PlaceBadge place={r.place} />
                             <span className="text-[10px] font-bold text-brand">+{r.points}</span>
@@ -211,7 +213,9 @@ export default async function LeaderboardPage() {
                 {Object.entries(SCORING_TABLE).map(([sport, pts]) => (
                   <tr key={sport} className="border-b border-surface-border/40 last:border-0 hover:bg-surface-hover transition-colors">
                     <td className="px-5 py-3 font-semibold text-foreground">
-                      <span className="mr-2">{SPORT_ICON[sport]}</span>{sport}
+                      <span className="inline-flex items-center gap-2">
+                        <SportIcon icon={SPORT_ICON_KEY[sport] ?? ''} size={20} />{sport}
+                      </span>
                     </td>
                     {pts.map((p, i) => (
                       <td key={i} className="px-4 py-3 text-center font-bold tabular-nums text-foreground">{p}</td>

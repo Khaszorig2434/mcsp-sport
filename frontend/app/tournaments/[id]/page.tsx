@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
 import TournamentTabs from './TournamentTabs';
-import { formatDate, genderLabel, sportIcon } from '@/lib/utils';
+import { formatDate, genderLabel } from '@/lib/utils';
 import { Calendar, MapPin } from 'lucide-react';
+import SportIcon from '@/components/SportIcon';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,8 +31,8 @@ export default async function TournamentPage({ params }: PageProps) {
       <div className="rounded-xl bg-surface-card border border-surface-border p-6">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
           {/* Sport icon */}
-          <div className="w-14 h-14 rounded-xl bg-surface flex items-center justify-center text-3xl shrink-0">
-            {sportIcon(tournament.sport_icon)}
+          <div className="w-14 h-14 rounded-xl bg-surface flex items-center justify-center shrink-0">
+            <SportIcon icon={tournament.sport_icon} size={40} />
           </div>
 
           {/* Info */}
