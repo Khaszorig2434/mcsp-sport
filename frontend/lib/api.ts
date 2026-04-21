@@ -44,6 +44,20 @@ export const api = {
       if (!res.ok) throw new Error(`Failed to update match ${id}`);
       return res.json();
     },
+    async create(body: { tournament_id: number; group_id?: number | null; stage: string; team1_id?: number | null; team2_id?: number | null; match_date?: string; status?: string }) {
+      const res = await fetch(`${API_BASE}/matches`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('Failed to create match');
+      return res.json();
+    },
+    async delete(id: number | string) {
+      const res = await fetch(`${API_BASE}/matches/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Failed to delete match ${id}`);
+      return res.json();
+    },
   },
 
   standings: {

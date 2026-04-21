@@ -12,6 +12,7 @@ const NAV_LINKS = [
   { label: 'Home',        href: '/' },
   { label: 'Tournaments', href: '/tournaments' },
   { label: 'Live Scores', href: '/tournaments' },
+  { label: 'Admin',       href: '/admin' },
 ];
 
 export default function Navbar() {
