@@ -66,10 +66,23 @@ async function updateMatch(req, res) {
     const { id } = req.params;
     const { score1, score2, status } = req.body;
 
-    const { rows } = await db.query('SELECT * FROM matches WHERE id = $1', [id]);
+    const { rows } = await db.query(`
+      SELECT m.*, s.name AS sport_name
+      FROM matches m
+      JOIN tournaments t ON t.id = m.tournament_id
+      JOIN sports s ON s.id = t.sport_id
+      WHERE m.id = $1
+    `, [id]);
     if (!rows.length) return res.status(404).json({ error: 'Match not found' });
 
     const match = rows[0];
+    const bo3Sports = ['CS2', 'Dota 2'];
+    const maxScore = bo3Sports.includes(match.sport_name) ? 2 : null;
+    if (maxScore !== null) {
+      if (score1 !== undefined && score1 > maxScore) return res.status(400).json({ error: `Score cannot exceed ${maxScore} for Bo3 format` });
+      if (score2 !== undefined && score2 > maxScore) return res.status(400).json({ error: `Score cannot exceed ${maxScore} for Bo3 format` });
+    }
+
     const newScore1 = score1  !== undefined ? score1  : match.score1;
     const newScore2 = score2  !== undefined ? score2  : match.score2;
     const newStatus = status  !== undefined ? status  : match.status;

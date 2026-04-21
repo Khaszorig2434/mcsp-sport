@@ -111,6 +111,9 @@ export default function AdminPage() {
   /* ── Group matches by stage ── */
   const byStage = STAGES.map((s) => ({ stage: s, matches: matches.filter((m) => m.stage === s) })).filter((g) => g.matches.length > 0);
 
+  const BO3_SPORTS = ['CS2', 'Dota 2'];
+  const maxScore = selected && BO3_SPORTS.includes(selected.sport_name) ? 2 : undefined;
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
@@ -244,10 +247,10 @@ export default function AdminPage() {
                                 <>
                                   <td className="px-4 py-2 text-foreground font-medium">{m.team1?.name ?? 'TBD'}</td>
                                   <td className="px-3 py-2">
-                                    <input type="number" className="input w-16 text-center" value={editForm.score1} onChange={(e) => setEditForm({ ...editForm, score1: e.target.value })} />
+                                    <input type="number" min={0} max={maxScore} className="input w-16 text-center" value={editForm.score1} onChange={(e) => { const v = maxScore !== undefined ? Math.min(Number(e.target.value), maxScore) : Number(e.target.value); setEditForm({ ...editForm, score1: String(v < 0 ? 0 : v) }); }} />
                                   </td>
                                   <td className="px-3 py-2">
-                                    <input type="number" className="input w-16 text-center" value={editForm.score2} onChange={(e) => setEditForm({ ...editForm, score2: e.target.value })} />
+                                    <input type="number" min={0} max={maxScore} className="input w-16 text-center" value={editForm.score2} onChange={(e) => { const v = maxScore !== undefined ? Math.min(Number(e.target.value), maxScore) : Number(e.target.value); setEditForm({ ...editForm, score2: String(v < 0 ? 0 : v) }); }} />
                                   </td>
                                   <td className="px-4 py-2 text-foreground font-medium">{m.team2?.name ?? 'TBD'}</td>
                                   <td className="px-3 py-2">

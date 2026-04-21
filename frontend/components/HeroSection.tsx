@@ -56,12 +56,12 @@ export default function HeroSection() {
 
       {/* ── Left player image ── */}
       <div className="absolute inset-y-0 left-0 w-[44%] overflow-hidden">
-        <PlayerImage src="/player-left.png" side="left" />
+        <PlayerImage src="/mascot-left.png" side="left" />
       </div>
 
       {/* ── Right player image ── */}
       <div className="absolute inset-y-0 right-0 w-[44%] overflow-hidden">
-        <PlayerImage src="/player-right.png" side="right" />
+        <PlayerImage src="/mascot-right.png" side="right" />
       </div>
 
       {/* ── Center content ── */}
