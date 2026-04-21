@@ -58,7 +58,7 @@ export default function AdminPage() {
   /* ── Edit ── */
   const startEdit = (m: Match) => {
     setEditingId(m.id);
-    setEditForm({ score1: m.score1 ?? '' as unknown as string, score2: m.score2 ?? '' as unknown as string, status: m.status });
+    setEditForm({ score1: m.score1 != null ? String(m.score1) : '', score2: m.score2 != null ? String(m.score2) : '', status: m.status });
   };
 
   const saveEdit = async (m: Match) => {
