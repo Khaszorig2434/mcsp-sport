@@ -83,7 +83,7 @@ SELECT setval('teams_id_seq', 36);
 INSERT INTO tournaments (id, name, sport_id, gender, status, prize_pool, location, start_date, end_date) VALUES
   (1, 'MCSP Basketball Championship 2026', 1, 'male',   'ongoing',   '$500,000',  'Ulaanbaatar', '2026-04-01', '2026-04-30'),
   (2, 'MCSP CS2 Open 2026',               2, 'male',   'ongoing',   '$250,000',  'Ulaanbaatar', '2026-04-10', '2026-04-25'),
-  (3, 'MCSP Dota 2 Invitational 2026',    3, 'male',   'upcoming',  '$300,000',  'Ulaanbaatar', '2026-05-01', '2026-05-15'),
+  (3, 'MCSP Dota 2 Invitational 2026',    3, 'male',   'ongoing',   '$300,000',  'Ulaanbaatar', '2026-04-15', '2026-05-15'),
   (4, 'MCSP Table Tennis Cup 2026',       4, 'mixed',  'completed', '$100,000',  'Ulaanbaatar', '2026-03-01', '2026-03-10'),
   (5, 'MCSP Chess Masters 2026',          5, 'male',   'upcoming',  '$150,000',  'Ulaanbaatar', '2026-06-01', '2026-06-20'),
   (6, 'MCSP Darts League 2026',           6, 'male',   'upcoming',  '$80,000',   'Ulaanbaatar', '2026-07-01', '2026-07-10');
@@ -155,14 +155,16 @@ INSERT INTO matches VALUES (19, 2,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,NULL,'2
 INSERT INTO matches VALUES (20, 2,NULL,'final', NULL,NULL,NULL,NULL,NULL,NULL,'2026-04-24 14:00+08','upcoming');
 
 -- ============================================================
--- MATCHES - Dota 2 (tournament 3, upcoming — no matches yet)
+-- MATCHES - Dota 2 (tournament 3, ongoing — Bo3 format, score = maps won)
 -- ============================================================
-INSERT INTO matches VALUES (21, 3,5,'group',13,14,NULL,NULL,NULL,NULL,'2026-05-02 10:00+08','upcoming');
-INSERT INTO matches VALUES (22, 3,5,'group',13,15,NULL,NULL,NULL,NULL,'2026-05-03 10:00+08','upcoming');
-INSERT INTO matches VALUES (23, 3,5,'group',14,15,NULL,NULL,NULL,NULL,'2026-05-04 10:00+08','upcoming');
-INSERT INTO matches VALUES (24, 3,6,'group',16,17,NULL,NULL,NULL,NULL,'2026-05-02 14:00+08','upcoming');
-INSERT INTO matches VALUES (25, 3,6,'group',16,18,NULL,NULL,NULL,NULL,'2026-05-03 14:00+08','upcoming');
-INSERT INTO matches VALUES (26, 3,6,'group',17,18,NULL,NULL,NULL,NULL,'2026-05-04 14:00+08','upcoming');
+-- Group A: Team 13 (T1), Team 14 (T2), Team 15 (T3)
+INSERT INTO matches VALUES (21, 3,5,'group',13,14,2,0,13,14,'2026-04-16 10:00+08','completed');
+INSERT INTO matches VALUES (22, 3,5,'group',13,15,2,1,13,15,'2026-04-18 10:00+08','completed');
+INSERT INTO matches VALUES (23, 3,5,'group',14,15,NULL,NULL,NULL,NULL,'2026-04-21 10:00+08','live');
+-- Group B: Team 16 (T4), Team 17 (T5), Team 18 (T6)
+INSERT INTO matches VALUES (24, 3,6,'group',16,17,2,1,16,17,'2026-04-16 14:00+08','completed');
+INSERT INTO matches VALUES (25, 3,6,'group',16,18,0,2,18,16,'2026-04-18 14:00+08','completed');
+INSERT INTO matches VALUES (26, 3,6,'group',17,18,NULL,NULL,NULL,NULL,'2026-04-21 14:00+08','upcoming');
 INSERT INTO matches VALUES (27, 3,NULL,'semi',  NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-10 10:00+08','upcoming');
 INSERT INTO matches VALUES (28, 3,NULL,'semi',  NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-10 14:00+08','upcoming');
 INSERT INTO matches VALUES (29, 3,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,NULL,'2026-05-14 10:00+08','upcoming');
