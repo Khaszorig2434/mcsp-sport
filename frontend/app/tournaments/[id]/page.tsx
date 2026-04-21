@@ -75,9 +75,9 @@ export default async function TournamentPage({ params }: PageProps) {
         {tournament.groups && tournament.groups.length > 0 && (
           <div className="flex flex-wrap gap-6 mt-5 pt-5 border-t border-surface-border">
             {tournament.groups.map((g) => (
-              <div key={g.group_id}>
+              <div key={g.id}>
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-1.5">
-                  Group {g.group_name}
+                  Group {g.name}
                 </p>
                 <div className="flex flex-col gap-1">
                   {g.teams.map((t) => (
