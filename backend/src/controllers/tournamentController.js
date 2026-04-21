@@ -113,4 +113,41 @@ async function getTournament(req, res) {
   }
 }
 
-module.exports = { listTournaments, getTournament };
+// POST /api/tournaments/:id/placements
+// Body: { place1, place2, place3, place4 } — team IDs
+async function setPlacements(req, res) {
+  try {
+    const { id } = req.params;
+    const { place1, place2, place3, place4 } = req.body;
+    if (!place1 || !place2 || !place3 || !place4) {
+      return res.status(400).json({ error: 'All four placements are required' });
+    }
+
+    const { rows: stageMeta } = await db.query(
+      `SELECT id, stage FROM matches WHERE tournament_id = $1 AND stage IN ('final','bronze') ORDER BY stage`,
+      [id]
+    );
+
+    const finalRow  = stageMeta.find((r) => r.stage === 'final');
+    const bronzeRow = stageMeta.find((r) => r.stage === 'bronze');
+    if (!finalRow || !bronzeRow) {
+      return res.status(404).json({ error: 'Final or bronze match not found for this tournament' });
+    }
+
+    await db.query(
+      `UPDATE matches SET team1_id=$1, team2_id=$2, score1=1, score2=0, winner_id=$1, loser_id=$2, status='completed' WHERE id=$3`,
+      [place1, place2, finalRow.id]
+    );
+    await db.query(
+      `UPDATE matches SET team1_id=$1, team2_id=$2, score1=1, score2=0, winner_id=$1, loser_id=$2, status='completed' WHERE id=$3`,
+      [place3, place4, bronzeRow.id]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to set placements' });
+  }
+}
+
+module.exports = { listTournaments, getTournament, setPlacements };

@@ -10,10 +10,86 @@ const STAGES   = ['group', 'semi', 'bronze', 'final'] as const;
 const STATUSES = ['upcoming', 'live', 'completed'] as const;
 const ADMIN_PIN = '1234';
 
+// Sports that skip bracket and use direct placement entry
+const PLACEMENT_SPORTS = ['Table Tennis', 'Chess', 'Darts'];
+
 interface EditState { score1: string; score2: string; status: string }
 interface AddState  { stage: string; team1_id: string; team2_id: string; match_date: string; status: string; group_id: string }
 
 const emptyAdd: AddState = { stage: 'group', team1_id: '', team2_id: '', match_date: '', status: 'upcoming', group_id: '' };
+
+/* ── Placement Panel ── */
+function PlacementPanel({
+  tournamentId, allTeams, onSaved, onError,
+}: {
+  tournamentId: number;
+  allTeams: Team[];
+  onSaved: () => void;
+  onError: () => void;
+}) {
+  const [form, setForm] = useState({ place1: '', place2: '', place3: '', place4: '' });
+  const [saving, setSaving] = useState(false);
+
+  const medals = [
+    { key: 'place1' as const, label: '🥇 1st Place (Gold)'   },
+    { key: 'place2' as const, label: '🥈 2nd Place (Silver)' },
+    { key: 'place3' as const, label: '🥉 3rd Place (Bronze)' },
+    { key: 'place4' as const, label: '4th Place'             },
+  ];
+
+  const usedIds = Object.values(form).filter(Boolean);
+
+  const submit = async () => {
+    if (!form.place1 || !form.place2 || !form.place3 || !form.place4) return;
+    setSaving(true);
+    try {
+      await api.tournaments.setPlacements(tournamentId, {
+        place1: Number(form.place1),
+        place2: Number(form.place2),
+        place3: Number(form.place3),
+        place4: Number(form.place4),
+      });
+      onSaved();
+    } catch { onError(); }
+    finally  { setSaving(false); }
+  };
+
+  return (
+    <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold text-brand uppercase tracking-widest">Final Standings</span>
+        <div className="flex-1 h-px bg-surface-border" />
+        <span className="text-[10px] text-muted">Enter placements directly — no bracket needed</span>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {medals.map(({ key, label }) => (
+          <div key={key}>
+            <label className="label">{label}</label>
+            <select
+              className="input"
+              value={form[key]}
+              onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+            >
+              <option value="">— select team —</option>
+              {allTeams
+                .filter((t) => !usedIds.includes(String(t.id)) || form[key] === String(t.id))
+                .map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        ))}
+      </div>
+
+      <button
+        onClick={submit}
+        disabled={saving || !form.place1 || !form.place2 || !form.place3 || !form.place4}
+        className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
+      >
+        {saving ? 'Saving…' : 'Save Placements'}
+      </button>
+    </div>
+  );
+}
 
 /* ── PIN Gate ── */
 function PinGate({ onUnlock }: { onUnlock: () => void }) {
@@ -185,6 +261,8 @@ export default function AdminPage() {
     completed: matches.filter((m) => m.status === 'completed').length,
   };
 
+  const isPlacementSport = selected ? PLACEMENT_SPORTS.includes(selected.sport_name) : false;
+
   if (!unlocked) return <PinGate onUnlock={unlock} />;
 
   return (
@@ -322,6 +400,16 @@ export default function AdminPage() {
                     </button>
                   </div>
                 </div>
+              )}
+
+              {/* Placement panel for non-bracket sports */}
+              {isPlacementSport && (
+                <PlacementPanel
+                  tournamentId={selected.id}
+                  allTeams={allTeams}
+                  onSaved={() => { flash('Placements saved'); loadMatches(selected!); }}
+                  onError={() => flash('Failed to save placements', false)}
+                />
               )}
 
               {/* Match tables */}

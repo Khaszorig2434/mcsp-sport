@@ -23,6 +23,15 @@ export const api = {
     get(id: number | string) {
       return get<Tournament>(`/tournaments/${id}`);
     },
+    async setPlacements(id: number | string, body: { place1: number; place2: number; place3: number; place4: number }) {
+      const res = await fetch(`${API_BASE}/tournaments/${id}/placements`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error('Failed to set placements');
+      return res.json();
+    },
   },
 
   matches: {
