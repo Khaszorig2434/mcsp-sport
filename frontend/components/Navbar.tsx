@@ -11,8 +11,7 @@ import Image from 'next/image';
 const NAV_LINKS = [
   { label: 'Home',        href: '/' },
   { label: 'Tournaments', href: '/tournaments' },
-  { label: 'Live Scores', href: '/tournaments' },
-  { label: 'Admin',       href: '/admin' },
+  { label: 'Leaderboard', href: '/leaderboard' },
 ];
 
 export default function Navbar() {
@@ -124,7 +123,7 @@ export default function Navbar() {
 
         {/* CTA */}
         <Link
-          href="/tournaments"
+          href="/schedule"
           className="text-white text-sm font-semibold px-4 py-1.5 rounded-full transition-colors whitespace-nowrap shrink-0"
           style={{ backgroundColor: '#950D4C' }}
           onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#7a0a3d')}

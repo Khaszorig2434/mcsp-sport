@@ -102,3 +102,26 @@ export interface Bracket {
   bronze:     BracketMatch | null;
   final:      BracketMatch | null;
 }
+
+export interface LeaderboardResult {
+  tournament_name: string;
+  sport_name:      string;
+  gender:          Gender;
+  place:           1 | 2 | 3 | 4;
+  points:          number;
+}
+
+export interface LeaderboardEntry {
+  rank:         number;
+  team_name:    string;
+  total_points: number;
+  gold:         number;
+  silver:       number;
+  bronze:       number;
+  results:      LeaderboardResult[];
+}
+
+export interface LeaderboardData {
+  leaderboard: LeaderboardEntry[];
+  scoring:     Record<string, number[]>;
+}

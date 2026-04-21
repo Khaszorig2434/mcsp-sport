@@ -1,5 +1,5 @@
 import type {
-  Tournament, Match, StandingsGroup, Bracket,
+  Tournament, Match, StandingsGroup, Bracket, LeaderboardData,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
@@ -69,6 +69,18 @@ export const api = {
   bracket: {
     get(tournamentId: number | string) {
       return get<Bracket>(`/bracket?tournamentId=${tournamentId}`);
+    },
+  },
+
+  leaderboard: {
+    get() {
+      return get<LeaderboardData>('/leaderboard');
+    },
+  },
+
+  schedule: {
+    get() {
+      return get<Match[]>('/schedule');
     },
   },
 };

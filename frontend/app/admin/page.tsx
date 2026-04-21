@@ -2,63 +2,130 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/api';
-import type { Tournament, Match } from '@/lib/types';
+import type { Tournament, Match, Group, Team } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Plus, Trash2, Pencil, Check, X, Shield } from 'lucide-react';
+import { Plus, Trash2, Pencil, Check, X, Shield, Lock, ChevronRight, Activity } from 'lucide-react';
 
-const STAGES = ['group', 'semi', 'bronze', 'final'] as const;
+const STAGES   = ['group', 'semi', 'bronze', 'final'] as const;
 const STATUSES = ['upcoming', 'live', 'completed'] as const;
+const ADMIN_PIN = '1234';
 
-/* ── types ── */
 interface EditState { score1: string; score2: string; status: string }
 interface AddState  { stage: string; team1_id: string; team2_id: string; match_date: string; status: string; group_id: string }
 
 const emptyAdd: AddState = { stage: 'group', team1_id: '', team2_id: '', match_date: '', status: 'upcoming', group_id: '' };
 
-export default function AdminPage() {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [selected,    setSelected]    = useState<Tournament | null>(null);
-  const [matches,     setMatches]     = useState<Match[]>([]);
-  const [loading,     setLoading]     = useState(false);
-  const [editingId,   setEditingId]   = useState<number | null>(null);
-  const [editForm,    setEditForm]    = useState<EditState>({ score1: '', score2: '', status: '' });
-  const [showAdd,     setShowAdd]     = useState(false);
-  const [addForm,     setAddForm]     = useState<AddState>(emptyAdd);
-  const [saving,      setSaving]      = useState(false);
-  const [msg,         setMsg]         = useState<{ text: string; ok: boolean } | null>(null);
+/* ── PIN Gate ── */
+function PinGate({ onUnlock }: { onUnlock: () => void }) {
+  const [pin, setPin] = useState('');
+  const [err, setErr] = useState(false);
 
-  /* load tournaments */
-  useEffect(() => {
-    api.tournaments.list().then(setTournaments).catch(() => {});
-  }, []);
-
-  /* load matches for selected tournament */
-  const loadMatches = useCallback(async (t: Tournament) => {
-    setLoading(true);
-    setEditingId(null);
-    setShowAdd(false);
-    try {
-      const data = await api.matches.list({ tournamentId: t.id });
-      setMatches(data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  const selectTournament = (t: Tournament) => {
-    setSelected(t);
-    loadMatches(t);
+  const submit = () => {
+    if (pin === ADMIN_PIN) { onUnlock(); }
+    else { setErr(true); setPin(''); setTimeout(() => setErr(false), 1500); }
   };
+
+  return (
+    <div className="min-h-screen bg-surface flex items-center justify-center">
+      <div className="bg-surface-card border border-surface-border rounded-2xl p-8 w-80 shadow-xl text-center space-y-5">
+        <div className="w-14 h-14 bg-brand/10 rounded-full flex items-center justify-center mx-auto">
+          <Lock size={24} className="text-brand" />
+        </div>
+        <div>
+          <h2 className="text-lg font-bold text-foreground">Admin Access</h2>
+          <p className="text-xs text-muted mt-1">Enter PIN to continue</p>
+        </div>
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={8}
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && submit()}
+          placeholder="••••"
+          className={cn('input text-center text-lg tracking-widest', err && 'border-loss ring-2 ring-loss/30')}
+          autoFocus
+        />
+        {err && <p className="text-xs text-loss -mt-2">Incorrect PIN</p>}
+        <button
+          onClick={submit}
+          className="w-full bg-brand text-white font-semibold py-2 rounded-xl hover:bg-brand-dark transition-colors"
+        >
+          Unlock
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function AdminPage() {
+  const [unlocked,   setUnlocked]   = useState(false);
+  const [tournaments,setTournaments]= useState<Tournament[]>([]);
+  const [selected,   setSelected]   = useState<Tournament | null>(null);
+  const [groups,     setGroups]     = useState<Group[]>([]);
+  const [matches,    setMatches]    = useState<Match[]>([]);
+  const [loading,    setLoading]    = useState(false);
+  const [editingId,  setEditingId]  = useState<number | null>(null);
+  const [editForm,   setEditForm]   = useState<EditState>({ score1: '', score2: '', status: '' });
+  const [showAdd,    setShowAdd]    = useState(false);
+  const [addForm,    setAddForm]    = useState<AddState>(emptyAdd);
+  const [saving,     setSaving]     = useState(false);
+  const [msg,        setMsg]        = useState<{ text: string; ok: boolean } | null>(null);
+
+  /* persist unlock for the browser session */
+  useEffect(() => {
+    if (sessionStorage.getItem('admin_unlocked') === '1') setUnlocked(true);
+  }, []);
+
+  const unlock = () => { sessionStorage.setItem('admin_unlocked', '1'); setUnlocked(true); };
+
+  useEffect(() => {
+    if (unlocked) api.tournaments.list().then(setTournaments).catch(() => {});
+  }, [unlocked]);
+
+  const loadMatches = useCallback(async (t: Tournament) => {
+    setLoading(true); setEditingId(null); setShowAdd(false);
+    try {
+      const [data, detail] = await Promise.all([
+        api.matches.list({ tournamentId: t.id }),
+        api.tournaments.get(t.id),
+      ]);
+      setMatches(data);
+      setGroups(detail.groups ?? []);
+    } finally { setLoading(false); }
+  }, []);
+
+  const selectTournament = (t: Tournament) => { setSelected(t); loadMatches(t); };
 
   const flash = (text: string, ok = true) => {
     setMsg({ text, ok });
     setTimeout(() => setMsg(null), 3000);
   };
 
+  /* ── helpers ── */
+  const allTeams: Team[] = groups.flatMap((g) => g.teams ?? []);
+  const teamsForGroup = (groupId: string) => {
+    const g = groups.find((g) => String(g.id) === groupId);
+    return g?.teams ?? allTeams;
+  };
+
+  const BO3_SPORTS = ['CS2', 'Dota 2'];
+  const maxScore   = selected && BO3_SPORTS.includes(selected.sport_name) ? 2 : undefined;
+
+  const clamp = (val: string) => {
+    if (maxScore === undefined) return val;
+    const n = Number(val);
+    return String(Math.min(Math.max(0, n), maxScore));
+  };
+
   /* ── Edit ── */
   const startEdit = (m: Match) => {
     setEditingId(m.id);
-    setEditForm({ score1: m.score1 != null ? String(m.score1) : '', score2: m.score2 != null ? String(m.score2) : '', status: m.status });
+    setEditForm({
+      score1: m.score1 != null ? String(m.score1) : '',
+      score2: m.score2 != null ? String(m.score2) : '',
+      status: m.status,
+    });
   };
 
   const saveEdit = async (m: Match) => {
@@ -73,7 +140,7 @@ export default function AdminPage() {
       setEditingId(null);
       loadMatches(selected!);
     } catch { flash('Failed to update', false); }
-    finally   { setSaving(false); }
+    finally  { setSaving(false); }
   };
 
   /* ── Delete ── */
@@ -93,45 +160,55 @@ export default function AdminPage() {
     try {
       await api.matches.create({
         tournament_id: selected.id,
-        stage:     addForm.stage,
-        team1_id:  addForm.team1_id  ? Number(addForm.team1_id)  : null,
-        team2_id:  addForm.team2_id  ? Number(addForm.team2_id)  : null,
-        group_id:  addForm.group_id  ? Number(addForm.group_id)  : null,
+        stage:      addForm.stage,
+        team1_id:   addForm.team1_id  ? Number(addForm.team1_id)  : null,
+        team2_id:   addForm.team2_id  ? Number(addForm.team2_id)  : null,
+        group_id:   addForm.group_id  ? Number(addForm.group_id)  : null,
         match_date: addForm.match_date || undefined,
-        status:    addForm.status,
+        status:     addForm.status,
       });
       flash('Match created');
       setShowAdd(false);
       setAddForm(emptyAdd);
       loadMatches(selected);
     } catch { flash('Failed to create', false); }
-    finally   { setSaving(false); }
+    finally  { setSaving(false); }
   };
 
-  /* ── Group matches by stage ── */
-  const byStage = STAGES.map((s) => ({ stage: s, matches: matches.filter((m) => m.stage === s) })).filter((g) => g.matches.length > 0);
+  const byStage = STAGES
+    .map((s) => ({ stage: s, matches: matches.filter((m) => m.stage === s) }))
+    .filter((g) => g.matches.length > 0);
 
-  const BO3_SPORTS = ['CS2', 'Dota 2'];
-  const maxScore = selected && BO3_SPORTS.includes(selected.sport_name) ? 2 : undefined;
+  const statusCounts = {
+    live:      matches.filter((m) => m.status === 'live').length,
+    upcoming:  matches.filter((m) => m.status === 'upcoming').length,
+    completed: matches.filter((m) => m.status === 'completed').length,
+  };
+
+  if (!unlocked) return <PinGate onUnlock={unlock} />;
 
   return (
     <div className="min-h-screen bg-surface">
       {/* Header */}
       <div className="bg-surface-card border-b border-surface-border px-6 py-4 flex items-center gap-3">
-        <Shield size={20} className="text-brand" />
-        <h1 className="text-lg font-bold text-foreground">Admin Panel</h1>
-        <span className="text-xs text-muted ml-2">Match Management</span>
+        <div className="w-8 h-8 bg-brand/10 rounded-lg flex items-center justify-center">
+          <Shield size={16} className="text-brand" />
+        </div>
+        <div>
+          <h1 className="text-sm font-bold text-foreground leading-none">Admin Panel</h1>
+          <span className="text-xs text-muted">Match Management</span>
+        </div>
         {msg && (
-          <span className={cn('ml-auto text-xs font-medium px-3 py-1 rounded-full', msg.ok ? 'bg-win/20 text-win' : 'bg-loss/20 text-loss')}>
+          <span className={cn('ml-auto text-xs font-medium px-3 py-1.5 rounded-full', msg.ok ? 'bg-win/15 text-win' : 'bg-loss/15 text-loss')}>
             {msg.text}
           </span>
         )}
       </div>
 
       <div className="flex h-[calc(100vh-64px)]">
-        {/* Sidebar — tournament list */}
-        <aside className="w-64 shrink-0 border-r border-surface-border bg-surface-card overflow-y-auto">
-          <p className="text-xs font-semibold text-muted uppercase tracking-wider px-4 py-3 border-b border-surface-border">
+        {/* Sidebar */}
+        <aside className="w-60 shrink-0 border-r border-surface-border bg-surface-card overflow-y-auto">
+          <p className="text-[10px] font-bold text-muted uppercase tracking-widest px-4 py-3 border-b border-surface-border">
             Tournaments
           </p>
           {tournaments.map((t) => (
@@ -139,49 +216,65 @@ export default function AdminPage() {
               key={t.id}
               onClick={() => selectTournament(t)}
               className={cn(
-                'w-full text-left px-4 py-3 border-b border-surface-border/50 transition-colors',
-                selected?.id === t.id
-                  ? 'bg-brand/10 border-l-2 border-l-brand text-brand font-semibold'
-                  : 'text-foreground hover:bg-surface-hover',
+                'w-full text-left px-4 py-3 border-b border-surface-border/40 flex items-center gap-2 transition-colors group',
+                selected?.id === t.id ? 'bg-brand/8 border-l-[3px] border-l-brand' : 'hover:bg-surface-hover',
               )}
             >
-              <p className="text-sm truncate">{t.name}</p>
-              <p className="text-xs text-muted mt-0.5">{t.sport_name} · {t.status}</p>
+              <div className="flex-1 min-w-0">
+                <p className={cn('text-xs font-semibold truncate', selected?.id === t.id ? 'text-brand' : 'text-foreground')}>
+                  {t.name}
+                </p>
+                <p className="text-[10px] text-muted mt-0.5 truncate">{t.sport_name} · {t.status}</p>
+              </div>
+              <ChevronRight size={12} className={cn('shrink-0 transition-colors', selected?.id === t.id ? 'text-brand' : 'text-muted group-hover:text-foreground')} />
             </button>
           ))}
         </aside>
 
-        {/* Main content */}
+        {/* Main */}
         <div className="flex-1 overflow-y-auto p-6">
           {!selected ? (
-            <div className="flex items-center justify-center h-full text-muted text-sm">
-              Select a tournament from the sidebar
+            <div className="flex flex-col items-center justify-center h-full gap-3 text-muted">
+              <Shield size={32} className="opacity-20" />
+              <p className="text-sm">Select a tournament to manage matches</p>
             </div>
           ) : (
-            <div className="space-y-6">
+            <div className="space-y-5 max-w-5xl">
               {/* Toolbar */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-bold text-foreground">{selected.name}</h2>
-                  <p className="text-xs text-muted">{matches.length} matches</p>
+                  <h2 className="text-base font-bold text-foreground">{selected.name}</h2>
+                  <div className="flex items-center gap-3 mt-1.5">
+                    {statusCounts.live > 0 && (
+                      <span className="flex items-center gap-1 text-[10px] font-semibold text-live">
+                        <Activity size={10} />
+                        {statusCounts.live} live
+                      </span>
+                    )}
+                    <span className="text-[10px] text-muted">{statusCounts.completed} done</span>
+                    <span className="text-[10px] text-muted">{statusCounts.upcoming} upcoming</span>
+                  </div>
                 </div>
                 <button
                   onClick={() => { setShowAdd(!showAdd); setEditingId(null); }}
-                  className="flex items-center gap-2 bg-brand text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors"
+                  className={cn(
+                    'flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-colors shrink-0',
+                    showAdd ? 'bg-surface-hover text-muted' : 'bg-brand text-white hover:bg-brand-dark',
+                  )}
                 >
-                  <Plus size={15} />
-                  Add Match
+                  {showAdd ? <X size={14} /> : <Plus size={14} />}
+                  {showAdd ? 'Cancel' : 'Add Match'}
                 </button>
               </div>
 
               {/* Add match form */}
               {showAdd && (
-                <div className="bg-surface-card border border-brand/30 rounded-xl p-5 space-y-4">
-                  <h3 className="text-sm font-semibold text-foreground">New Match</h3>
+                <div className="bg-surface-card border border-brand/25 rounded-2xl p-5 space-y-4">
+                  <h3 className="text-xs font-bold text-foreground uppercase tracking-wider">New Match</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     <div>
                       <label className="label">Stage</label>
-                      <select className="input" value={addForm.stage} onChange={(e) => setAddForm({ ...addForm, stage: e.target.value })}>
+                      <select className="input" value={addForm.stage} onChange={(e) => setAddForm({ ...addForm, stage: e.target.value, group_id: '', team1_id: '', team2_id: '' })}>
                         {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
@@ -191,106 +284,146 @@ export default function AdminPage() {
                         {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
+                    {addForm.stage === 'group' && groups.length > 0 && (
+                      <div>
+                        <label className="label">Group</label>
+                        <select className="input" value={addForm.group_id} onChange={(e) => setAddForm({ ...addForm, group_id: e.target.value, team1_id: '', team2_id: '' })}>
+                          <option value="">— select —</option>
+                          {groups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)}
+                        </select>
+                      </div>
+                    )}
                     <div>
-                      <label className="label">Group ID (optional)</label>
-                      <input className="input" type="number" placeholder="e.g. 1" value={addForm.group_id} onChange={(e) => setAddForm({ ...addForm, group_id: e.target.value })} />
+                      <label className="label">Team 1</label>
+                      <select className="input" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value })}>
+                        <option value="">— TBD —</option>
+                        {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams).map((t) => (
+                          <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
-                      <label className="label">Team 1 ID</label>
-                      <input className="input" type="number" placeholder="Team ID" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value })} />
-                    </div>
-                    <div>
-                      <label className="label">Team 2 ID</label>
-                      <input className="input" type="number" placeholder="Team ID" value={addForm.team2_id} onChange={(e) => setAddForm({ ...addForm, team2_id: e.target.value })} />
+                      <label className="label">Team 2</label>
+                      <select className="input" value={addForm.team2_id} onChange={(e) => setAddForm({ ...addForm, team2_id: e.target.value })}>
+                        <option value="">— TBD —</option>
+                        {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams)
+                          .filter((t) => String(t.id) !== addForm.team1_id)
+                          .map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                      </select>
                     </div>
                     <div>
                       <label className="label">Match Date</label>
                       <input className="input" type="datetime-local" value={addForm.match_date} onChange={(e) => setAddForm({ ...addForm, match_date: e.target.value })} />
                     </div>
                   </div>
-                  <div className="flex gap-2">
-                    <button onClick={submitAdd} disabled={saving} className="bg-brand text-white text-sm font-semibold px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-50">
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={submitAdd} disabled={saving} className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50">
                       {saving ? 'Saving…' : 'Create Match'}
-                    </button>
-                    <button onClick={() => setShowAdd(false)} className="text-sm text-muted hover:text-foreground px-4 py-2">
-                      Cancel
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Match tables by stage */}
+              {/* Match tables */}
               {loading ? (
-                <div className="space-y-2">{[1,2,3].map((i) => <div key={i} className="h-14 bg-surface-card rounded-lg animate-pulse" />)}</div>
+                <div className="space-y-2">{[1,2,3].map((i) => <div key={i} className="h-14 bg-surface-card rounded-xl animate-pulse" />)}</div>
               ) : byStage.length === 0 ? (
-                <p className="text-muted text-sm">No matches yet. Click "Add Match" to create one.</p>
+                <div className="text-center py-16 text-muted text-sm">
+                  No matches yet — click &quot;Add Match&quot; to create one.
+                </div>
               ) : (
                 byStage.map(({ stage, matches: sm }) => (
                   <div key={stage}>
-                    <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-2">{stage}</h3>
-                    <div className="bg-surface-card rounded-xl border border-surface-border overflow-hidden">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] font-bold text-muted uppercase tracking-widest">{stage}</span>
+                      <div className="flex-1 h-px bg-surface-border" />
+                      <span className="text-[10px] text-muted">{sm.length} match{sm.length !== 1 ? 'es' : ''}</span>
+                    </div>
+                    <div className="bg-surface-card rounded-2xl border border-surface-border overflow-hidden">
                       <table className="w-full text-sm">
                         <thead>
-                          <tr className="border-b border-surface-border text-xs text-muted">
-                            <th className="text-left px-4 py-3">Team 1</th>
-                            <th className="text-center px-3 py-3 w-10">S1</th>
-                            <th className="text-center px-3 py-3 w-10">S2</th>
-                            <th className="text-left px-4 py-3">Team 2</th>
-                            <th className="text-left px-3 py-3 w-28">Status</th>
-                            <th className="text-right px-4 py-3 w-28">Actions</th>
+                          <tr className="border-b border-surface-border">
+                            <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted uppercase tracking-wider">Team 1</th>
+                            <th className="text-center px-3 py-2.5 text-[10px] font-bold text-muted uppercase tracking-wider w-12">S1</th>
+                            <th className="text-center px-3 py-2.5 text-[10px] font-bold text-muted uppercase tracking-wider w-12">S2</th>
+                            <th className="text-left px-4 py-2.5 text-[10px] font-bold text-muted uppercase tracking-wider">Team 2</th>
+                            <th className="text-left px-3 py-2.5 text-[10px] font-bold text-muted uppercase tracking-wider w-28">Status</th>
+                            <th className="text-right px-4 py-2.5 text-[10px] font-bold text-muted uppercase tracking-wider w-24">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
                           {sm.map((m) => (
-                            <tr key={m.id} className="border-b border-surface-border/50 last:border-0 hover:bg-surface-hover transition-colors">
+                            <tr
+                              key={m.id}
+                              className={cn(
+                                'border-b border-surface-border/40 last:border-0 transition-colors',
+                                m.status === 'live' ? 'bg-live/5' : 'hover:bg-surface-hover',
+                              )}
+                            >
                               {editingId === m.id ? (
                                 <>
-                                  <td className="px-4 py-2 text-foreground font-medium">{m.team1?.name ?? 'TBD'}</td>
+                                  <td className="px-4 py-2 font-semibold text-foreground text-sm">{m.team1?.name ?? 'TBD'}</td>
                                   <td className="px-3 py-2">
-                                    <input type="number" min={0} max={maxScore} className="input w-16 text-center" value={editForm.score1} onChange={(e) => { const v = maxScore !== undefined ? Math.min(Number(e.target.value), maxScore) : Number(e.target.value); setEditForm({ ...editForm, score1: String(v < 0 ? 0 : v) }); }} />
+                                    <input type="number" min={0} max={maxScore} className="input w-14 text-center text-sm"
+                                      value={editForm.score1}
+                                      onChange={(e) => setEditForm({ ...editForm, score1: clamp(e.target.value) })} />
                                   </td>
                                   <td className="px-3 py-2">
-                                    <input type="number" min={0} max={maxScore} className="input w-16 text-center" value={editForm.score2} onChange={(e) => { const v = maxScore !== undefined ? Math.min(Number(e.target.value), maxScore) : Number(e.target.value); setEditForm({ ...editForm, score2: String(v < 0 ? 0 : v) }); }} />
+                                    <input type="number" min={0} max={maxScore} className="input w-14 text-center text-sm"
+                                      value={editForm.score2}
+                                      onChange={(e) => setEditForm({ ...editForm, score2: clamp(e.target.value) })} />
                                   </td>
-                                  <td className="px-4 py-2 text-foreground font-medium">{m.team2?.name ?? 'TBD'}</td>
+                                  <td className="px-4 py-2 font-semibold text-foreground text-sm">{m.team2?.name ?? 'TBD'}</td>
                                   <td className="px-3 py-2">
-                                    <select className="input" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
+                                    <select className="input text-xs py-1" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
                                       {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                                     </select>
                                   </td>
                                   <td className="px-4 py-2">
                                     <div className="flex items-center justify-end gap-1">
-                                      <button onClick={() => saveEdit(m)} disabled={saving} className="p-1.5 rounded-lg bg-win/10 text-win hover:bg-win/20 transition-colors">
-                                        <Check size={14} />
+                                      <button onClick={() => saveEdit(m)} disabled={saving} title="Save"
+                                        className="p-1.5 rounded-lg bg-win/10 text-win hover:bg-win/20 transition-colors disabled:opacity-50">
+                                        <Check size={13} />
                                       </button>
-                                      <button onClick={() => setEditingId(null)} className="p-1.5 rounded-lg bg-surface-hover text-muted hover:text-foreground transition-colors">
-                                        <X size={14} />
+                                      <button onClick={() => setEditingId(null)} title="Cancel"
+                                        className="p-1.5 rounded-lg bg-surface-hover text-muted hover:text-foreground transition-colors">
+                                        <X size={13} />
                                       </button>
                                     </div>
                                   </td>
                                 </>
                               ) : (
                                 <>
-                                  <td className="px-4 py-3 text-foreground font-medium">{m.team1?.name ?? <span className="text-muted italic">TBD</span>}</td>
-                                  <td className="px-3 py-3 text-center font-bold text-foreground tabular-nums">{m.score1 ?? '—'}</td>
-                                  <td className="px-3 py-3 text-center font-bold text-foreground tabular-nums">{m.score2 ?? '—'}</td>
-                                  <td className="px-4 py-3 text-foreground font-medium">{m.team2?.name ?? <span className="text-muted italic">TBD</span>}</td>
+                                  <td className="px-4 py-3">
+                                    <span className={cn('font-semibold text-sm', m.winner_id === m.team1?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team1?.id ? 'text-muted line-through' : 'text-foreground')}>
+                                      {m.team1?.name ?? <span className="text-muted italic font-normal">TBD</span>}
+                                    </span>
+                                  </td>
+                                  <td className="px-3 py-3 text-center font-bold tabular-nums text-foreground">{m.score1 ?? '—'}</td>
+                                  <td className="px-3 py-3 text-center font-bold tabular-nums text-foreground">{m.score2 ?? '—'}</td>
+                                  <td className="px-4 py-3">
+                                    <span className={cn('font-semibold text-sm', m.winner_id === m.team2?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team2?.id ? 'text-muted line-through' : 'text-foreground')}>
+                                      {m.team2?.name ?? <span className="text-muted italic font-normal">TBD</span>}
+                                    </span>
+                                  </td>
                                   <td className="px-3 py-3">
-                                    <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium',
-                                      m.status === 'live'      && 'bg-live/20 text-live',
+                                    <span className={cn('text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wide',
+                                      m.status === 'live'      && 'bg-live/15 text-live',
                                       m.status === 'completed' && 'bg-win/10 text-win',
-                                      m.status === 'upcoming'  && 'bg-brand/10 text-brand',
+                                      m.status === 'upcoming'  && 'bg-surface-hover text-muted',
                                     )}>
-                                      {m.status}
+                                      {m.status === 'live' ? '● live' : m.status}
                                     </span>
                                   </td>
                                   <td className="px-4 py-3">
                                     <div className="flex items-center justify-end gap-1">
-                                      <button onClick={() => startEdit(m)} className="p-1.5 rounded-lg text-muted hover:text-brand hover:bg-brand/10 transition-colors">
-                                        <Pencil size={14} />
+                                      <button onClick={() => startEdit(m)} title="Edit"
+                                        className="p-1.5 rounded-lg text-muted hover:text-brand hover:bg-brand/10 transition-colors">
+                                        <Pencil size={13} />
                                       </button>
-                                      <button onClick={() => deleteMatch(m.id)} className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors">
-                                        <Trash2 size={14} />
+                                      <button onClick={() => deleteMatch(m.id)} title="Delete"
+                                        className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors">
+                                        <Trash2 size={13} />
                                       </button>
                                     </div>
                                   </td>
