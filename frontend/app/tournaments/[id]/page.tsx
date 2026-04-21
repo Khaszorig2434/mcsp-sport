@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { api } from '@/lib/api';
 import TournamentTabs from './TournamentTabs';
 import { formatDate, genderLabel, sportIcon } from '@/lib/utils';
-import { Calendar, MapPin, DollarSign } from 'lucide-react';
+import { Calendar, MapPin } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,12 +65,6 @@ export default async function TournamentPage({ params }: PageProps) {
                   <Calendar size={13} />
                   {formatDate(tournament.start_date)}
                   {tournament.end_date && ` – ${formatDate(tournament.end_date)}`}
-                </span>
-              )}
-              {tournament.prize_pool && (
-                <span className="flex items-center gap-1.5">
-                  <DollarSign size={13} />
-                  {tournament.prize_pool} Prize Pool
                 </span>
               )}
             </div>

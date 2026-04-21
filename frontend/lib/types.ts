@@ -20,9 +20,9 @@ export interface Team {
 }
 
 export interface Group {
-  group_id:   number;
-  group_name: string;
-  teams:      Team[];
+  id:    number;
+  name:  string;
+  teams: Team[];
 }
 
 export interface Tournament {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Calendar, MapPin, DollarSign, Zap } from 'lucide-react';
+import { Calendar, MapPin, Zap } from 'lucide-react';
 import type { Tournament } from '@/lib/types';
 import { cn, formatDate, genderLabel, sportIcon } from '@/lib/utils';
 
@@ -74,12 +74,6 @@ export default function TournamentCard({ tournament: t }: Props) {
             <Calendar size={11} />
             {formatDate(t.start_date)}
             {t.end_date && ` – ${formatDate(t.end_date)}`}
-          </span>
-        )}
-        {t.prize_pool && (
-          <span className="flex items-center gap-1">
-            <DollarSign size={11} />
-            {t.prize_pool}
           </span>
         )}
       </div>
