@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Roboto, Montserrat } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/Navbar';
+import BottomNav from '@/components/BottomNav';
 import ThemeProvider from '@/components/ThemeProvider';
 
 const roboto = Roboto({
@@ -32,9 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen bg-surface">
         <ThemeProvider>
           <Navbar />
-          <main className="pt-16">
+          <main className="pt-16 pb-16 md:pb-0">
             {children}
           </main>
+          <BottomNav />
         </ThemeProvider>
       </body>
     </html>

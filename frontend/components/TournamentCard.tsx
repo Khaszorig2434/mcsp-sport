@@ -45,12 +45,22 @@ export default function TournamentCard({ tournament: t }: Props) {
         </div>
 
         <div className="flex flex-col items-end gap-1 shrink-0">
-          <span className={cn('text-xs px-2 py-0.5 rounded font-medium', statusStyles[t.status])}>
-            {t.status === 'ongoing' && (
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-live mr-1 animate-pulse" />
-            )}
-            {statusLabel[t.status]}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className={cn(
+              'text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase tracking-wide',
+              t.gender === 'female' ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20' :
+              t.gender === 'male'   ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' :
+                                     'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+            )}>
+              {t.gender === 'female' ? "Women's" : t.gender === 'male' ? "Men's" : 'Mixed'}
+            </span>
+            <span className={cn('text-xs px-2 py-0.5 rounded font-medium', statusStyles[t.status])}>
+              {t.status === 'ongoing' && (
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-live mr-1 animate-pulse" />
+              )}
+              {statusLabel[t.status]}
+            </span>
+          </div>
           {t.live_matches_count && t.live_matches_count > 0 && (
             <span className="flex items-center gap-1 text-xs text-live">
               <Zap size={10} />
