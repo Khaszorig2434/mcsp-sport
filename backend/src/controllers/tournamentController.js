@@ -160,4 +160,15 @@ async function setIndividualPlacements(req, res) {
   }
 }
 
-module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements };
+// DELETE /api/tournaments/:id/individual-placements
+async function clearIndividualPlacements(req, res) {
+  try {
+    await db.query('DELETE FROM individual_placements WHERE tournament_id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to clear placements' });
+  }
+}
+
+module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements, clearIndividualPlacements };

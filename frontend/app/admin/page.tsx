@@ -23,17 +23,19 @@ interface PlacementEntry { player_name: string; team_id: string }
 const emptyEntry = (): PlacementEntry => ({ player_name: '', team_id: '' });
 
 function PlacementPanel({
-  tournamentId, allTeams, onSaved, onError,
+  tournamentId, allTeams, onSaved, onError, onCleared,
 }: {
   tournamentId: number;
   allTeams: Team[];
   onSaved: () => void;
   onError: () => void;
+  onCleared: () => void;
 }) {
   const [entries, setEntries] = useState<PlacementEntry[]>([
     emptyEntry(), emptyEntry(), emptyEntry(), emptyEntry(),
   ]);
-  const [saving, setSaving] = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   // Load existing placements on mount
   useEffect(() => {
@@ -68,7 +70,19 @@ function PlacementPanel({
     finally  { setSaving(false); }
   };
 
+  const clear = async () => {
+    if (!confirm('Clear all placement data for this tournament?')) return;
+    setClearing(true);
+    try {
+      await api.tournaments.clearIndividualPlacements(tournamentId);
+      setEntries([emptyEntry(), emptyEntry(), emptyEntry(), emptyEntry()]);
+      onCleared();
+    } catch { onError(); }
+    finally  { setClearing(false); }
+  };
+
   const allFilled = entries.every((e) => e.player_name.trim());
+  const anyFilled = entries.some((e) => e.player_name.trim());
 
   return (
     <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
@@ -102,13 +116,24 @@ function PlacementPanel({
         ))}
       </div>
 
-      <button
-        onClick={submit}
-        disabled={saving || !allFilled}
-        className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
-      >
-        {saving ? 'Saving…' : 'Save Placements'}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={submit}
+          disabled={saving || !allFilled}
+          className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
+        >
+          {saving ? 'Saving…' : 'Save Placements'}
+        </button>
+        {anyFilled && (
+          <button
+            onClick={clear}
+            disabled={clearing}
+            className="text-sm font-semibold px-4 py-2 rounded-xl border border-loss/30 text-loss hover:bg-loss/10 transition-colors disabled:opacity-40"
+          >
+            {clearing ? 'Clearing…' : 'Clear Data'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -427,10 +452,12 @@ export default function AdminPage() {
               {/* Placement panel for non-bracket sports */}
               {isPlacementSport && (
                 <PlacementPanel
+                  key={selected.id}
                   tournamentId={selected.id}
                   allTeams={allTeams}
-                  onSaved={() => { flash('Placements saved'); loadMatches(selected!); }}
+                  onSaved={() => flash('Placements saved')}
                   onError={() => flash('Failed to save placements', false)}
+                  onCleared={() => flash('Data cleared')}
                 />
               )}
 

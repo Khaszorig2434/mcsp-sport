@@ -37,6 +37,11 @@ export const api = {
       if (!res.ok) throw new Error('Failed to save placements');
       return res.json();
     },
+    async clearIndividualPlacements(id: number | string) {
+      const res = await fetch(`${API_BASE}/tournaments/${id}/individual-placements`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to clear placements');
+      return res.json();
+    },
   },
 
   matches: {
