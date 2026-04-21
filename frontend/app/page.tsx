@@ -26,7 +26,7 @@ async function LiveMatches() {
                 {m.sport_icon ? `${m.sport_name} · ` : ''}{m.tournament_name}
               </p>
             )}
-            <MatchCard match={m} compact />
+            <MatchCard match={m} />
           </div>
         ))}
       </div>
@@ -59,7 +59,7 @@ async function UpcomingMatches() {
         {allUpcoming.map((m) => (
           <div key={m.id}>
             <p className="text-xs text-gray-500 mb-1 px-1">{m.tournament_name}</p>
-            <MatchCard match={m} compact />
+            <MatchCard match={m} />
           </div>
         ))}
       </div>
