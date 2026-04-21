@@ -57,6 +57,7 @@ async function getLeaderboard(req, res) {
       const tid = row.tournament_id;
       if (!byTournament[tid]) {
         byTournament[tid] = {
+          tournament_id:   tid,
           tournament_name: row.tournament_name,
           sport_name:      row.sport_name,
           gender:          row.gender,
@@ -79,6 +80,7 @@ async function getLeaderboard(req, res) {
       const tid = row.tournament_id;
       if (!byTournamentIndiv[tid]) {
         byTournamentIndiv[tid] = {
+          tournament_id:   tid,
           tournament_name: row.tournament_name,
           sport_name:      row.sport_name,
           gender:          row.gender,
@@ -112,6 +114,7 @@ async function getLeaderboard(req, res) {
         if (place === 2) teamMap[entry.name].silver  += 1;
         if (place === 3) teamMap[entry.name].bronze  += 1;
         teamMap[entry.name].results.push({
+          tournament_id:   tournamentData.tournament_id,
           tournament_name: tournamentData.tournament_name,
           sport_name:      tournamentData.sport_name,
           gender:          tournamentData.gender,

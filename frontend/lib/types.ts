@@ -104,11 +104,13 @@ export interface Bracket {
 }
 
 export interface LeaderboardResult {
+  tournament_id:   number;
   tournament_name: string;
   sport_name:      string;
   gender:          Gender;
   place:           1 | 2 | 3 | 4;
   points:          number;
+  player_name:     string | null;
 }
 
 export interface LeaderboardEntry {

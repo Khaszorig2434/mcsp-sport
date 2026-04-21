@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import type { LeaderboardEntry } from '@/lib/types';
 import { cn } from '@/lib/utils';
@@ -172,12 +173,24 @@ export default async function LeaderboardPage() {
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1.5">
                         {entry.results.map((r, i) => (
-                          <div key={i} className="flex items-center gap-1 bg-surface-hover rounded-lg px-2 py-1">
+                          <Link
+                            key={i}
+                            href={`/tournaments/${r.tournament_id}`}
+                            className="flex items-center gap-1 bg-surface-hover hover:bg-brand/10 hover:border-brand/30 border border-transparent rounded-lg px-2 py-1 transition-colors"
+                          >
                             <SportIcon icon={SPORT_ICON_KEY[r.sport_name] ?? ''} size={16} />
                             <span className="text-[10px] text-muted">{r.sport_name}</span>
+                            {r.gender !== 'mixed' && (
+                              <span className={cn(
+                                'text-[9px] font-bold px-1 py-0.5 rounded',
+                                r.gender === 'female' ? 'bg-pink-500/15 text-pink-400' : 'bg-sky-500/15 text-sky-400',
+                              )}>
+                                {r.gender === 'female' ? 'W' : 'M'}
+                              </span>
+                            )}
                             <PlaceBadge place={r.place} />
                             <span className="text-[10px] font-bold text-brand">+{r.points}</span>
-                          </div>
+                          </Link>
                         ))}
                       </div>
                     </td>
