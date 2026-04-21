@@ -131,11 +131,11 @@ INSERT INTO matches VALUES (3,  1,1,'group',2,3, 2,1,2,3, '2026-04-07 10:00+08',
 INSERT INTO matches VALUES (4,  1,2,'group',4,5, 1,2,5,4, '2026-04-05 14:00+08','completed');
 INSERT INTO matches VALUES (5,  1,2,'group',4,6, 0,2,6,4, '2026-04-06 14:00+08','completed');
 INSERT INTO matches VALUES (6,  1,2,'group',5,6, NULL,NULL,NULL,NULL, '2026-04-21 14:00+08','live');
--- Playoffs
-INSERT INTO matches VALUES (7,  1,NULL,'semi',  1,5,  NULL,NULL,NULL,NULL,'2026-04-24 10:00+08','upcoming');
-INSERT INTO matches VALUES (8,  1,NULL,'semi',  2,6,  NULL,NULL,NULL,NULL,'2026-04-24 14:00+08','upcoming');
-INSERT INTO matches VALUES (9,  1,NULL,'bronze',NULL,NULL,NULL,NULL,NULL,NULL,'2026-04-28 10:00+08','upcoming');
-INSERT INTO matches VALUES (10, 1,NULL,'final', NULL,NULL,NULL,NULL,NULL,NULL,'2026-04-28 14:00+08','upcoming');
+-- Playoffs: SF1=A1(1)vsB2(5), SF2=A2(2)vsB1(6) → SF1 winner=5, SF2 winner=2
+INSERT INTO matches VALUES (7,  1,NULL,'semi',  1,5,  0,2,5,1,'2026-04-24 10:00+08','completed');
+INSERT INTO matches VALUES (8,  1,NULL,'semi',  2,6,  2,0,2,6,'2026-04-24 14:00+08','completed');
+INSERT INTO matches VALUES (9,  1,NULL,'bronze',1,6,  NULL,NULL,NULL,NULL,'2026-04-28 10:00+08','upcoming');
+INSERT INTO matches VALUES (10, 1,NULL,'final', 5,2,  NULL,NULL,NULL,NULL,'2026-04-28 14:00+08','upcoming');
 
 -- ============================================================
 -- MATCHES - CS2 (tournament 2, ongoing)

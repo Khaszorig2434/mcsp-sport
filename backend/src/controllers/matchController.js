@@ -104,6 +104,48 @@ async function updateMatch(req, res) {
       `UPDATE matches SET score1=$1, score2=$2, status=$3, winner_id=$4, loser_id=$5 WHERE id=$6 RETURNING *`,
       [newScore1, newScore2, newStatus, winnerId, loserId, id]
     );
+
+    // ── Auto-advance bracket ──────────────────────────────────
+    // When a semifinal is completed, push winner → Final, loser → Bronze
+    if (match.stage === 'semi' && newStatus === 'completed' && winnerId && loserId) {
+      // Find all semis for this tournament ordered by id (SF1 = index 0, SF2 = index 1)
+      const { rows: semis } = await db.query(
+        `SELECT id FROM matches WHERE tournament_id = $1 AND stage = 'semi' ORDER BY id ASC`,
+        [match.tournament_id]
+      );
+      const semiIndex = semis.findIndex((s) => String(s.id) === String(id));
+      const teamCol   = semiIndex === 0 ? 'team1_id' : 'team2_id';
+
+      // Push winner to Final, loser to Bronze
+      await db.query(
+        `UPDATE matches SET ${teamCol} = $1 WHERE tournament_id = $2 AND stage = 'final'`,
+        [winnerId, match.tournament_id]
+      );
+      await db.query(
+        `UPDATE matches SET ${teamCol} = $1 WHERE tournament_id = $2 AND stage = 'bronze'`,
+        [loserId, match.tournament_id]
+      );
+    }
+
+    // When a semi is reset (upcoming/live), clear the team slot it had filled
+    if (match.stage === 'semi' && (newStatus === 'upcoming' || newStatus === 'live')) {
+      const { rows: semis } = await db.query(
+        `SELECT id FROM matches WHERE tournament_id = $1 AND stage = 'semi' ORDER BY id ASC`,
+        [match.tournament_id]
+      );
+      const semiIndex = semis.findIndex((s) => String(s.id) === String(id));
+      const teamCol   = semiIndex === 0 ? 'team1_id' : 'team2_id';
+
+      await db.query(
+        `UPDATE matches SET ${teamCol} = NULL WHERE tournament_id = $1 AND stage = 'final'`,
+        [match.tournament_id]
+      );
+      await db.query(
+        `UPDATE matches SET ${teamCol} = NULL WHERE tournament_id = $1 AND stage = 'bronze'`,
+        [match.tournament_id]
+      );
+    }
+
     res.json(updated.rows[0]);
   } catch (err) {
     console.error(err);
