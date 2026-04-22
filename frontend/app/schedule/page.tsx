@@ -143,8 +143,8 @@ export default async function SchedulePage() {
                           <p className={cn('font-bold text-base', m.team1 ? 'text-foreground' : 'text-muted italic')}>
                             {m.team1?.name ?? 'TBD'}
                           </p>
-                          {m.team1?.short_name && (
-                            <p className="text-[10px] text-muted uppercase tracking-wider">{m.team1.short_name}</p>
+                          {m.team1?.player_name && (
+                            <p className="text-[10px] text-muted mt-0.5">{m.team1.player_name}</p>
                           )}
                         </div>
                         <div className="shrink-0 bg-surface-hover rounded-xl px-3 py-1.5 text-center">
@@ -154,8 +154,8 @@ export default async function SchedulePage() {
                           <p className={cn('font-bold text-base', m.team2 ? 'text-foreground' : 'text-muted italic')}>
                             {m.team2?.name ?? 'TBD'}
                           </p>
-                          {m.team2?.short_name && (
-                            <p className="text-[10px] text-muted uppercase tracking-wider">{m.team2.short_name}</p>
+                          {m.team2?.player_name && (
+                            <p className="text-[10px] text-muted mt-0.5">{m.team2.player_name}</p>
                           )}
                         </div>
                       </div>
