@@ -143,8 +143,8 @@ function PlacementPanel({
 
 /* ── Darts Groups Panel ── */
 
-interface DartsAddGroupState { name: string; player1_name: string; player2_name: string }
-const emptyDartsGroup = (): DartsAddGroupState => ({ name: '', player1_name: '', player2_name: '' });
+interface DartsAddGroupState { player1_name: string; player2_name: string }
+const emptyDartsGroup = (): DartsAddGroupState => ({ player1_name: '', player2_name: '' });
 
 function DartsGroupsPanel({
   tournament,
@@ -172,7 +172,6 @@ function DartsGroupsPanel({
     try {
       await api.darts.groups.create({
         tournament_id: tournament.id,
-        name:          addForm.name.trim(),
         player1_name:  addForm.player1_name.trim(),
         player2_name:  addForm.player2_name.trim(),
       });
@@ -199,7 +198,7 @@ function DartsGroupsPanel({
     } catch { onMsg('Failed to delete group', false); }
   };
 
-  const canSubmit = addForm.name.trim() && addForm.player1_name.trim() && addForm.player2_name.trim();
+  const canSubmit = addForm.player1_name.trim() && addForm.player2_name.trim();
 
   return (
     <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
@@ -244,16 +243,7 @@ function DartsGroupsPanel({
 
       {/* Add group form */}
       {showAdd && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
-          <div>
-            <label className="label">Group Name</label>
-            <input
-              className="input"
-              placeholder="e.g. A"
-              value={addForm.name}
-              onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
-            />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <div>
             <label className="label">Player 1</label>
             <input
@@ -261,6 +251,7 @@ function DartsGroupsPanel({
               placeholder="Player name"
               value={addForm.player1_name}
               onChange={(e) => setAddForm({ ...addForm, player1_name: e.target.value })}
+              onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleAdd()}
             />
           </div>
           <div>
@@ -270,9 +261,10 @@ function DartsGroupsPanel({
               placeholder="Player name"
               value={addForm.player2_name}
               onChange={(e) => setAddForm({ ...addForm, player2_name: e.target.value })}
+              onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleAdd()}
             />
           </div>
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-2">
             <button
               onClick={handleAdd}
               disabled={saving || !canSubmit}

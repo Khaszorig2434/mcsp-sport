@@ -103,17 +103,23 @@ async function getDartsGroups(req, res) {
 }
 
 // POST /api/darts/groups
-// Body: { tournament_id, name, player1_name, player2_name }
-// Creates a team record for each player name, then creates the group + match.
+// Body: { tournament_id, player1_name, player2_name }
+// Group name is auto-assigned as the next letter (A, B, C…).
 async function createDartsGroup(req, res) {
   try {
-    const { tournament_id, name, player1_name, player2_name } = req.body;
-    if (!tournament_id || !name || !player1_name?.trim() || !player2_name?.trim()) {
-      return res.status(400).json({ error: 'tournament_id, name, player1_name and player2_name are required' });
+    const { tournament_id, player1_name, player2_name } = req.body;
+    if (!tournament_id || !player1_name?.trim() || !player2_name?.trim()) {
+      return res.status(400).json({ error: 'tournament_id, player1_name and player2_name are required' });
     }
     if (player1_name.trim().toLowerCase() === player2_name.trim().toLowerCase()) {
       return res.status(400).json({ error: 'Players must have different names' });
     }
+
+    // Auto-assign the next group letter (A, B, C…)
+    const { rows: [{ count }] } = await db.query(
+      `SELECT COUNT(*) AS count FROM darts_groups WHERE tournament_id = $1`, [tournament_id]
+    );
+    const name = String.fromCharCode(65 + parseInt(count, 10)); // 0→A, 1→B, …
 
     // Get the sport_id so we tag the new team rows correctly
     const { rows: [tournament] } = await db.query(
@@ -151,9 +157,6 @@ async function createDartsGroup(req, res) {
     res.status(201).json({ id: group.id, name });
   } catch (err) {
     console.error(err);
-    if (err.code === '23505') {
-      return res.status(409).json({ error: 'A group with that name already exists for this tournament' });
-    }
     res.status(500).json({ error: 'Failed to create darts group' });
   }
 }
