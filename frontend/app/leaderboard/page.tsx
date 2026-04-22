@@ -25,6 +25,144 @@ const SCORING_TABLE: Record<string, number[]> = {
   'Dota 2':       [8, 5, 2, 0.5],
 };
 
+/* ─── Team Scoring Matrix ────────────────────────────────────────── */
+
+const MATRIX_SPORTS = [
+  { name: 'Basketball',   short: 'Basketball',  hasWomen: true  },
+  { name: 'Table Tennis', short: 'Table Tennis',hasWomen: true  },
+  { name: 'Darts',        short: 'Darts',       hasWomen: true  },
+  { name: 'Chess',        short: 'Chess',       hasWomen: true  },
+  { name: 'CS2',          short: 'CS2',         hasWomen: false },
+  { name: 'Dota 2',       short: 'Dota 2',      hasWomen: false },
+];
+const TEAMS_ORDER = ['Team 1', 'Team 2', 'Team 3', 'Team 4', 'Team 5', 'Team 6'];
+const PLACE_LABELS = ['I', 'II', 'III', 'IV'];
+const PLACE_CELL_COLORS: Record<number, string> = {
+  1: 'bg-yellow-400/20 text-yellow-500 font-black',
+  2: 'bg-gray-400/15 text-gray-400 font-bold',
+  3: 'bg-orange-400/15 text-orange-500 font-bold',
+  4: 'bg-surface-hover text-muted font-semibold',
+};
+
+function TeamScoringMatrix({ leaderboard }: { leaderboard: LeaderboardEntry[] }) {
+  // Build lookup: teamName → sportName → gender → place → points
+  type Lookup = Record<string, Record<string, Record<string, Record<number, number>>>>;
+  const lookup: Lookup = {};
+  for (const entry of leaderboard) {
+    lookup[entry.team_name] = {};
+    for (const r of entry.results) {
+      if (!lookup[entry.team_name][r.sport_name]) lookup[entry.team_name][r.sport_name] = {};
+      if (!lookup[entry.team_name][r.sport_name][r.gender]) lookup[entry.team_name][r.sport_name][r.gender] = {};
+      lookup[entry.team_name][r.sport_name][r.gender][r.place] = r.points;
+    }
+  }
+
+  const teamsSorted = TEAMS_ORDER.filter((t) => leaderboard.some((e) => e.team_name === t));
+
+  return (
+    <div className="bg-surface-card border border-surface-border rounded-2xl overflow-hidden">
+      <div className="px-5 py-4 border-b border-surface-border">
+        <h2 className="text-sm font-bold text-foreground">Team Placement Breakdown</h2>
+        <p className="text-xs text-muted mt-0.5">Placements per sport and gender across all tournaments</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="text-xs border-collapse" style={{ minWidth: '900px' }}>
+          <thead>
+            {/* Sport group headers */}
+            <tr className="border-b border-surface-border">
+              <th className="sticky left-0 z-10 bg-surface-card px-4 py-2.5 text-left text-[10px] font-bold text-muted uppercase tracking-wider min-w-[110px]" rowSpan={2}>
+                Team
+              </th>
+              {MATRIX_SPORTS.map((sp) => (
+                <th
+                  key={sp.name}
+                  colSpan={sp.hasWomen ? 8 : 4}
+                  className="px-2 py-2 text-center font-bold text-foreground border-l border-surface-border"
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <SportIcon icon={SPORT_ICON_KEY[sp.name] ?? ''} size={14} />
+                    {sp.short}
+                  </span>
+                </th>
+              ))}
+              <th className="px-3 py-2 text-center font-bold text-foreground border-l border-surface-border whitespace-nowrap">Pts</th>
+              <th className="px-3 py-2 text-center font-bold text-foreground whitespace-nowrap">Rank</th>
+            </tr>
+            {/* Place sub-headers */}
+            <tr className="border-b border-surface-border bg-surface/40">
+              {MATRIX_SPORTS.map((sp) =>
+                (sp.hasWomen ? ['M', 'W'] : ['M']).map((g) =>
+                  PLACE_LABELS.map((pl, pi) => (
+                    <th key={`${sp.name}-${g}-${pi}`}
+                      className={cn(
+                        'px-2 py-1.5 text-center text-[9px] font-bold text-muted uppercase tracking-wide w-9',
+                        pi === 0 && 'border-l border-surface-border',
+                      )}>
+                      <div className="text-[8px] text-muted/60">{g}</div>
+                      {pl}
+                    </th>
+                  ))
+                )
+              )}
+              <th className="border-l border-surface-border" />
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {teamsSorted.map((teamName, idx) => {
+              const entry = leaderboard.find((e) => e.team_name === teamName);
+              const tl = lookup[teamName] ?? {};
+              return (
+                <tr key={teamName}
+                  className={cn(
+                    'border-b border-surface-border/40 last:border-0 transition-colors hover:bg-surface-hover',
+                    idx === 0 && 'bg-yellow-400/5',
+                  )}>
+                  <td className="sticky left-0 z-10 bg-surface-card px-4 py-3 font-bold text-foreground whitespace-nowrap">
+                    {entry && <RankBadge rank={entry.rank} />}
+                    <span className="ml-2">{teamName}</span>
+                  </td>
+                  {MATRIX_SPORTS.map((sp) =>
+                    (sp.hasWomen ? ['male', 'female'] : ['male']).map((g) =>
+                      [1, 2, 3, 4].map((place) => {
+                        const pts = tl[sp.name]?.[g]?.[place];
+                        return (
+                          <td key={`${sp.name}-${g}-${place}`}
+                            className={cn(
+                              'text-center w-9 py-2.5',
+                              place === 1 && 'border-l border-surface-border',
+                            )}>
+                            {pts !== undefined ? (
+                              <span className={cn(
+                                'inline-flex items-center justify-center w-6 h-6 rounded-full text-[10px]',
+                                PLACE_CELL_COLORS[place],
+                              )}>
+                                {PLACE_LABELS[place - 1]}
+                              </span>
+                            ) : (
+                              <span className="text-surface-border text-[10px]">·</span>
+                            )}
+                          </td>
+                        );
+                      })
+                    )
+                  )}
+                  <td className="border-l border-surface-border px-3 py-2.5 text-center font-black text-foreground tabular-nums">
+                    {entry?.total_points ?? 0}
+                  </td>
+                  <td className="px-3 py-2.5 text-center font-bold text-muted tabular-nums">
+                    {entry ? `#${entry.rank}` : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function RankBadge({ rank }: { rank: number }) {
   if (rank === 1) return (
     <div className="w-8 h-8 rounded-full bg-yellow-400/20 flex items-center justify-center">
@@ -201,6 +339,9 @@ export default async function LeaderboardPage() {
             </table>
           )}
         </div>
+
+        {/* Sport-by-sport scoring matrix */}
+        <TeamScoringMatrix leaderboard={leaderboard} />
 
         {/* Scoring reference table */}
         <div className="bg-surface-card border border-surface-border rounded-2xl overflow-hidden">
