@@ -82,9 +82,6 @@ export default async function LeaderboardPage() {
     <div className="min-h-screen bg-surface">
       {/* Hero banner */}
       <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #0E1C39 0%, #143D8C 50%, #950D4C 100%)' }}>
-        <div className="absolute inset-0 opacity-5 text-white text-[200px] font-black flex items-center justify-center leading-none select-none pointer-events-none">
-          MCSP
-        </div>
         <div className="relative z-10 max-w-5xl mx-auto px-6 py-12 text-center">
           <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 mb-4">
             <Trophy size={14} className="text-yellow-400" />
