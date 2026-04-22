@@ -10,13 +10,12 @@ import { cn, stageLabel } from '@/lib/utils';
 
 const PLACEMENT_SPORTS = ['Table Tennis', 'Chess', 'Darts'];
 
-type TabId = 'overview' | 'matches' | 'standings' | 'bracket';
+type TabId = 'overview' | 'matches' | 'bracket';
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: 'overview',  label: 'Overview'  },
-  { id: 'matches',   label: 'Matches'   },
-  { id: 'standings', label: 'Standings' },
-  { id: 'bracket',   label: 'Bracket'   },
+  { id: 'overview', label: 'Overview' },
+  { id: 'matches',  label: 'Matches'  },
+  { id: 'bracket',  label: 'Bracket'  },
 ];
 
 interface IndivPlacement {
@@ -220,7 +219,7 @@ function BracketSportTabs({ tournamentId }: { tournamentId: string }) {
         const data = await api.matches.list({ tournamentId });
         setMatches(data);
       }
-      if (tab === 'standings' || tab === 'overview') {
+      if (tab === 'overview') {
         const data = await api.standings.get(tournamentId);
         setStandings(data);
       }
@@ -293,7 +292,6 @@ function BracketSportTabs({ tournamentId }: { tournamentId: string }) {
       )}
 
       {activeTab === 'matches' && !loading && !error && <MatchesTab matches={matches} />}
-      {activeTab === 'standings' && !loading && !error && <StandingsTable groups={standings} />}
       {activeTab === 'bracket' && !loading && !error && (
         <div>
           {bracket ? <Bracket bracket={bracket} /> : <p className="text-muted text-sm">Bracket not available yet.</p>}
