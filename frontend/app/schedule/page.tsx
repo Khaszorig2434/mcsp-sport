@@ -20,20 +20,20 @@ const STAGE_LABEL: Record<string, string> = {
   final:  'Final',
 };
 
+const UB_TZ = 'Asia/Ulaanbaatar';
+
 function formatDate(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-US', { timeZone: UB_TZ, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 function formatTime(iso: string) {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('en-US', { timeZone: UB_TZ, hour: '2-digit', minute: '2-digit' });
 }
 
 function groupByDate(matches: Match[]): { date: string; label: string; matches: Match[] }[] {
   const map: Record<string, Match[]> = {};
   for (const m of matches) {
-    const day = m.match_date ? new Date(m.match_date).toDateString() : 'TBD';
+    const day = m.match_date ? new Date(m.match_date).toLocaleDateString('en-US', { timeZone: UB_TZ }) : 'TBD';
     if (!map[day]) map[day] = [];
     map[day].push(m);
   }
@@ -44,17 +44,18 @@ function groupByDate(matches: Match[]): { date: string; label: string; matches: 
   }));
 }
 
+function ubDateStr(iso: string) {
+  return new Date(iso).toLocaleDateString('en-US', { timeZone: UB_TZ });
+}
+
 function isToday(iso: string) {
-  const d = new Date(iso);
-  const now = new Date();
-  return d.toDateString() === now.toDateString();
+  return ubDateStr(iso) === new Date().toLocaleDateString('en-US', { timeZone: UB_TZ });
 }
 
 function isTomorrow(iso: string) {
-  const d = new Date(iso);
   const tom = new Date();
   tom.setDate(tom.getDate() + 1);
-  return d.toDateString() === tom.toDateString();
+  return ubDateStr(iso) === tom.toLocaleDateString('en-US', { timeZone: UB_TZ });
 }
 
 function dateChip(iso: string | null) {

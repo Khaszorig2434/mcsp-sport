@@ -5,9 +5,12 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+const UB_TZ = 'Asia/Ulaanbaatar';
+
 export function formatDate(dateStr: string | null): string {
   if (!dateStr) return 'TBD';
   return new Date(dateStr).toLocaleDateString('en-US', {
+    timeZone: UB_TZ,
     month: 'short',
     day:   'numeric',
     year:  'numeric',
@@ -17,6 +20,7 @@ export function formatDate(dateStr: string | null): string {
 export function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return 'TBD';
   return new Date(dateStr).toLocaleString('en-US', {
+    timeZone: UB_TZ,
     month:  'short',
     day:    'numeric',
     hour:   '2-digit',

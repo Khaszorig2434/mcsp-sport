@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api } from '@/lib/api';
-import type { Match, StandingsGroup, Bracket as BracketType, Group } from '@/lib/types';
+import type { Match, StandingsGroup, Bracket as BracketType } from '@/lib/types';
 import MatchCard from '@/components/MatchCard';
 import StandingsTable from '@/components/StandingsTable';
 import Bracket from '@/components/Bracket';
@@ -28,16 +28,14 @@ interface IndivPlacement {
 export default function TournamentTabs({
   tournamentId,
   sportName,
-  groups,
 }: {
   tournamentId: string;
   sportName:    string;
-  groups:       Group[];
 }) {
   const isIndividual = PLACEMENT_SPORTS.includes(sportName);
 
   if (isIndividual) {
-    return <IndividualSportView tournamentId={tournamentId} groups={groups} />;
+    return <IndividualSportView tournamentId={tournamentId} />;
   }
 
   return <BracketSportTabs tournamentId={tournamentId} />;
@@ -52,7 +50,7 @@ const MEDAL_CONFIG = [
   { label: '4th Place',  ring: 'ring-surface-border',bg: 'bg-surface-hover', text: 'text-muted',      icon: '4️⃣', size: 'sm' },
 ];
 
-function IndividualSportView({ tournamentId, groups }: { tournamentId: string; groups: Group[] }) {
+function IndividualSportView({ tournamentId }: { tournamentId: string }) {
   const [placements, setPlacements] = useState<IndivPlacement[]>([]);
   const [loading,    setLoading]    = useState(true);
 
@@ -62,8 +60,6 @@ function IndividualSportView({ tournamentId, groups }: { tournamentId: string; g
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [tournamentId]);
-
-  const allTeams = groups.flatMap((g) => g.teams ?? []);
 
   const podiumOrder = [placements[1], placements[0], placements[2]].filter(Boolean) as IndivPlacement[];
   const hasPlacements = placements.length > 0;
@@ -144,57 +140,6 @@ function IndividualSportView({ tournamentId, groups }: { tournamentId: string; g
             )}
           </>
         )}
-      </div>
-
-      {/* Participants section */}
-      {allTeams.length > 0 && (
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Participating Teams</span>
-            <div className="flex-1 h-px bg-surface-border" />
-            <span className="text-[10px] text-muted">{allTeams.length} teams</span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {groups.map((g) => (
-              <div key={g.id} className="bg-surface-card border border-surface-border rounded-xl p-4">
-                <p className="text-[10px] font-bold text-brand uppercase tracking-widest mb-3">Group {g.name}</p>
-                <div className="space-y-2">
-                  {(g.teams ?? []).map((t) => {
-                    const placement = placements.find((p) => p.team_name === t.name);
-                    return (
-                      <div key={t.id} className="flex items-center justify-between gap-2">
-                        <span className="text-sm font-medium text-foreground">{t.name}</span>
-                        {placement && (
-                          <span className={cn(
-                            'text-[10px] font-bold px-1.5 py-0.5 rounded',
-                            placement.place === 1 ? 'bg-yellow-400/15 text-yellow-500' :
-                            placement.place === 2 ? 'bg-gray-400/15 text-gray-400' :
-                            placement.place === 3 ? 'bg-orange-400/15 text-orange-500' :
-                                                    'bg-surface-hover text-muted',
-                          )}>
-                            {['1st','2nd','3rd','4th'][placement.place - 1]}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Format info */}
-      <div className="rounded-xl border border-surface-border bg-surface-card px-5 py-4 flex items-start gap-3">
-        <span className="text-xl mt-0.5">ℹ️</span>
-        <div>
-          <p className="text-sm font-semibold text-foreground mb-0.5">Individual Format</p>
-          <p className="text-xs text-muted leading-relaxed">
-            This tournament uses an individual placement format. Players compete on behalf of their team —
-            points are awarded to the team based on each player's final standing.
-          </p>
-        </div>
       </div>
 
     </div>

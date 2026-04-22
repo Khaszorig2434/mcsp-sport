@@ -101,7 +101,6 @@ export default async function TournamentPage({ params }: PageProps) {
       <TournamentTabs
         tournamentId={params.id}
         sportName={tournament.sport_name}
-        groups={tournament.groups ?? []}
       />
     </div>
   );
