@@ -11,7 +11,7 @@ const SPORT_POINTS = {
 };
 
 // Sports that use individual_placements table instead of bracket matches
-const INDIVIDUAL_SPORTS = ['Table Tennis', 'Chess', 'Darts'];
+const INDIVIDUAL_SPORTS = ['Table Tennis', 'Chess'];
 
 // GET /api/leaderboard
 async function getLeaderboard(req, res) {
@@ -49,6 +49,27 @@ async function getLeaderboard(req, res) {
       JOIN sports      s  ON s.id  = tn.sport_id
       LEFT JOIN teams  t  ON t.id  = ip.team_id
       ORDER BY tn.id, ip.place
+    `);
+
+    // Darts: read final + bronze results from darts_matches
+    const { rows: dartsRows } = await db.query(`
+      SELECT
+        dm.stage,
+        dm.winner_id, dm.loser_id,
+        wt.name AS winner_name,
+        lt.name AS loser_name,
+        tn.id AS tournament_id, tn.name AS tournament_name, tn.gender,
+        s.name AS sport_name
+      FROM darts_matches dm
+      JOIN tournaments tn ON tn.id = dm.tournament_id
+      JOIN sports      s  ON s.id  = tn.sport_id
+      LEFT JOIN teams wt  ON wt.id = dm.winner_id
+      LEFT JOIN teams lt  ON lt.id = dm.loser_id
+      WHERE dm.stage IN ('final', 'bronze')
+        AND dm.status = 'completed'
+        AND dm.winner_id IS NOT NULL
+        AND s.name = 'Darts'
+      ORDER BY tn.id, dm.stage
     `);
 
     // Build per-tournament bracket placements
@@ -125,8 +146,32 @@ async function getLeaderboard(req, res) {
       }
     };
 
+    // Build per-tournament darts bracket placements
+    const byTournamentDarts = {};
+    for (const row of dartsRows) {
+      const tid = row.tournament_id;
+      if (!byTournamentDarts[tid]) {
+        byTournamentDarts[tid] = {
+          tournament_id:   tid,
+          tournament_name: row.tournament_name,
+          sport_name:      row.sport_name,
+          gender:          row.gender,
+          placements:      {},
+        };
+      }
+      const t = byTournamentDarts[tid];
+      if (row.stage === 'final') {
+        t.placements[1] = { name: row.winner_name };
+        t.placements[2] = { name: row.loser_name  };
+      } else if (row.stage === 'bronze') {
+        t.placements[3] = { name: row.winner_name };
+        t.placements[4] = { name: row.loser_name  };
+      }
+    }
+
     for (const t of Object.values(byTournament))      applyPlacements(t);
     for (const t of Object.values(byTournamentIndiv)) applyPlacements(t);
+    for (const t of Object.values(byTournamentDarts)) applyPlacements(t);
 
     // Sort: total_points DESC → gold DESC → silver DESC
     const leaderboard = Object.values(teamMap).sort((a, b) => {

@@ -171,12 +171,18 @@ async function clearIndividualPlacements(req, res) {
   }
 }
 
-// GET /api/tournaments/teams
+// GET /api/tournaments/teams?sportId=
 async function listTeams(req, res) {
   try {
-    const { rows } = await db.query(
-      `SELECT id, name, short_name, country, player_name FROM teams ORDER BY id`
-    );
+    const { sportId } = req.query;
+    let query = `SELECT id, name, short_name, country, player_name FROM teams`;
+    const params = [];
+    if (sportId) {
+      query += ` WHERE sport_id = $1`;
+      params.push(sportId);
+    }
+    query += ` ORDER BY name`;
+    const { rows } = await db.query(query, params);
     res.json(rows);
   } catch (err) {
     console.error(err);

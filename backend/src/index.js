@@ -8,6 +8,7 @@ const standingsRoutes   = require('./routes/standings');
 const bracketRoutes     = require('./routes/bracket');
 const leaderboardRoutes = require('./routes/leaderboard');
 const scheduleRoutes    = require('./routes/schedule');
+const dartsRoutes       = require('./routes/darts');
 
 const app  = express();
 const PORT = process.env.PORT || 4000;
@@ -26,6 +27,7 @@ app.use('/api/standings',    standingsRoutes);
 app.use('/api/bracket',      bracketRoutes);
 app.use('/api/leaderboard',  leaderboardRoutes);
 app.use('/api/schedule',     scheduleRoutes);
+app.use('/api/darts',        dartsRoutes);
 
 // ── 404 ──────────────────────────────────────────────────────
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }));

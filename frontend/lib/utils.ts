@@ -30,10 +30,11 @@ export function formatDateTime(dateStr: string | null): string {
 
 export function stageLabel(stage: string): string {
   const labels: Record<string, string> = {
-    group:  'Group Stage',
-    semi:   'Semi-Final',
-    bronze: 'Bronze Match',
-    final:  'Grand Final',
+    group:         'Group Stage',
+    quarterfinal:  'Quarter-Final',
+    semi:          'Semi-Final',
+    bronze:        'Bronze Match',
+    final:         'Grand Final',
   };
   return labels[stage] ?? stage;
 }

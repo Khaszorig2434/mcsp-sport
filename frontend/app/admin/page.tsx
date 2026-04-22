@@ -2,16 +2,18 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { api } from '@/lib/api';
-import type { Tournament, Match, Group, Team } from '@/lib/types';
+import type { Tournament, Match, Group, Team, DartsGroup } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Plus, Trash2, Pencil, Check, X, Shield, Lock, ChevronRight, Activity } from 'lucide-react';
 
-const STAGES   = ['group', 'semi', 'bronze', 'final'] as const;
-const STATUSES = ['upcoming', 'live', 'completed'] as const;
-const ADMIN_PIN = '1234';
+const STAGES        = ['group', 'semi', 'bronze', 'final'] as const;
+const DARTS_STAGES  = ['group', 'quarterfinal', 'semi', 'bronze', 'final'] as const;
+const STATUSES      = ['upcoming', 'live', 'completed'] as const;
+const ADMIN_PIN     = '1234';
 
 // Sports that skip bracket and use direct placement entry
-const PLACEMENT_SPORTS = ['Table Tennis', 'Chess', 'Darts'];
+const PLACEMENT_SPORTS = ['Table Tennis', 'Chess'];
+const DARTS_SPORT      = 'Darts';
 
 interface EditState { score1: string; score2: string; status: string }
 interface AddState  { stage: string; team1_id: string; team2_id: string; match_date: string; status: string; group_id: string; player1_name: string; player2_name: string }
@@ -139,6 +141,152 @@ function PlacementPanel({
   );
 }
 
+/* ── Darts Groups Panel ── */
+
+interface DartsAddGroupState { name: string; team1_id: string; team2_id: string }
+const emptyDartsGroup = (): DartsAddGroupState => ({ name: '', team1_id: '', team2_id: '' });
+
+function DartsGroupsPanel({
+  tournament,
+  onMsg,
+  onGroupsChanged,
+}: {
+  tournament: Tournament;
+  onMsg: (text: string, ok?: boolean) => void;
+  onGroupsChanged: () => void;
+}) {
+  const [groups,   setGroups]   = useState<DartsGroup[]>([]);
+  const [allTeams, setAllTeams] = useState<{ id: number; name: string; player_name: string | null }[]>([]);
+  const [showAdd,  setShowAdd]  = useState(false);
+  const [addForm,  setAddForm]  = useState<DartsAddGroupState>(emptyDartsGroup());
+  const [saving,   setSaving]   = useState(false);
+
+  const load = useCallback(() => {
+    api.darts.groups.list(tournament.id).then(setGroups).catch(() => {});
+  }, [tournament.id]);
+
+  useEffect(() => {
+    load();
+    api.teams.list({ sportId: tournament.sport_id }).then(setAllTeams).catch(() => {});
+  }, [tournament.id, tournament.sport_id, load]);
+
+  const handleAdd = async () => {
+    if (!addForm.name.trim() || !addForm.team1_id || !addForm.team2_id) return;
+    setSaving(true);
+    try {
+      await api.darts.groups.create({
+        tournament_id: tournament.id,
+        name:          addForm.name.trim(),
+        team1_id:      Number(addForm.team1_id),
+        team2_id:      Number(addForm.team2_id),
+      });
+      onMsg('Group created');
+      setShowAdd(false);
+      setAddForm(emptyDartsGroup());
+      load();
+      onGroupsChanged();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to create group';
+      onMsg(msg, false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (groupId: number) => {
+    if (!confirm('Delete this group and its match?')) return;
+    try {
+      await api.darts.groups.delete(groupId);
+      onMsg('Group deleted');
+      load();
+      onGroupsChanged();
+    } catch { onMsg('Failed to delete group', false); }
+  };
+
+  const team2Choices = allTeams.filter((t) => String(t.id) !== addForm.team1_id);
+
+  return (
+    <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold text-brand uppercase tracking-widest">Darts Groups</span>
+        <div className="flex-1 h-px bg-surface-border" />
+        <button
+          onClick={() => { setShowAdd(!showAdd); setAddForm(emptyDartsGroup()); }}
+          className={cn(
+            'flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors',
+            showAdd ? 'bg-surface-hover text-muted' : 'bg-brand text-white hover:bg-brand-dark',
+          )}
+        >
+          {showAdd ? <X size={12} /> : <Plus size={12} />}
+          {showAdd ? 'Cancel' : 'Add Group'}
+        </button>
+      </div>
+
+      {/* Existing groups */}
+      {groups.length === 0 && !showAdd && (
+        <p className="text-xs text-muted">No groups yet — add one to create the first group match.</p>
+      )}
+      <div className="space-y-2">
+        {groups.map((g) => (
+          <div key={g.id} className="flex items-center justify-between bg-surface rounded-xl px-4 py-2.5 border border-surface-border">
+            <div>
+              <span className="text-xs font-bold text-foreground mr-2">Group {g.name}</span>
+              <span className="text-xs text-muted">
+                {g.teams.map((t) => t.player_name || t.name).join(' vs ')}
+              </span>
+            </div>
+            <button
+              onClick={() => handleDelete(g.id)}
+              className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors"
+              title="Delete group"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Add group form */}
+      {showAdd && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          <div>
+            <label className="label">Group Name</label>
+            <input
+              className="input"
+              placeholder="e.g. A"
+              value={addForm.name}
+              onChange={(e) => setAddForm({ ...addForm, name: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="label">Player 1</label>
+            <select className="input" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value, team2_id: '' })}>
+              <option value="">— select —</option>
+              {allTeams.map((t) => <option key={t.id} value={t.id}>{t.player_name || t.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="label">Player 2</label>
+            <select className="input" value={addForm.team2_id} onChange={(e) => setAddForm({ ...addForm, team2_id: e.target.value })} disabled={!addForm.team1_id}>
+              <option value="">— select —</option>
+              {team2Choices.map((t) => <option key={t.id} value={t.id}>{t.player_name || t.name}</option>)}
+            </select>
+          </div>
+          <div className="sm:col-span-3">
+            <button
+              onClick={handleAdd}
+              disabled={saving || !addForm.name.trim() || !addForm.team1_id || !addForm.team2_id}
+              className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
+            >
+              {saving ? 'Creating…' : 'Create Group'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── PIN Gate ── */
 function PinGate({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = useState('');
@@ -195,6 +343,7 @@ export default function AdminPage() {
   const [addForm,    setAddForm]    = useState<AddState>(emptyAdd);
   const [saving,     setSaving]     = useState(false);
   const [msg,        setMsg]        = useState<{ text: string; ok: boolean } | null>(null);
+  const isDarts = selected?.sport_name === DARTS_SPORT;
 
   /* persist unlock for the browser session */
   useEffect(() => {
@@ -210,12 +359,18 @@ export default function AdminPage() {
   const loadMatches = useCallback(async (t: Tournament) => {
     setLoading(true); setEditingId(null); setShowAdd(false);
     try {
-      const [data, detail] = await Promise.all([
-        api.matches.list({ tournamentId: t.id }),
-        api.tournaments.get(t.id),
-      ]);
-      setMatches(data);
-      setGroups(detail.groups ?? []);
+      if (t.sport_name === DARTS_SPORT) {
+        const data = await api.darts.matches.list({ tournamentId: t.id });
+        setMatches(data);
+        setGroups([]);
+      } else {
+        const [data, detail] = await Promise.all([
+          api.matches.list({ tournamentId: t.id }),
+          api.tournaments.get(t.id),
+        ]);
+        setMatches(data);
+        setGroups(detail.groups ?? []);
+      }
     } finally { setLoading(false); }
   }, []);
 
@@ -255,11 +410,13 @@ export default function AdminPage() {
   const saveEdit = async (m: Match) => {
     setSaving(true);
     try {
-      await api.matches.update(m.id, {
+      const body = {
         score1: editForm.score1 !== '' ? Number(editForm.score1) : undefined,
         score2: editForm.score2 !== '' ? Number(editForm.score2) : undefined,
         status: editForm.status,
-      });
+      };
+      if (isDarts) await api.darts.matches.update(m.id, body);
+      else         await api.matches.update(m.id, body);
       flash('Match updated');
       setEditingId(null);
       loadMatches(selected!);
@@ -271,7 +428,8 @@ export default function AdminPage() {
   const deleteMatch = async (id: number) => {
     if (!confirm('Delete this match?')) return;
     try {
-      await api.matches.delete(id);
+      if (isDarts) await api.darts.matches.delete(id);
+      else         await api.matches.delete(id);
       flash('Match deleted');
       loadMatches(selected!);
     } catch { flash('Failed to delete', false); }
@@ -288,7 +446,7 @@ export default function AdminPage() {
       if (addForm.team2_id && addForm.player2_name.trim())
         await api.teams.update(Number(addForm.team2_id), addForm.player2_name.trim()).catch(() => {});
 
-      await api.matches.create({
+      const matchBody = {
         tournament_id: selected.id,
         stage:      addForm.stage,
         team1_id:   addForm.team1_id  ? Number(addForm.team1_id)  : null,
@@ -296,7 +454,9 @@ export default function AdminPage() {
         group_id:   addForm.group_id  ? Number(addForm.group_id)  : null,
         match_date: addForm.match_date ? addForm.match_date + ':00+08:00' : undefined,
         status:     addForm.status,
-      });
+      };
+      if (isDarts) await api.darts.matches.create(matchBody);
+      else         await api.matches.create(matchBody);
       flash('Match created');
       setShowAdd(false);
       setAddForm(emptyAdd);
@@ -305,7 +465,8 @@ export default function AdminPage() {
     finally  { setSaving(false); }
   };
 
-  const byStage = STAGES
+  const activeStages = isDarts ? DARTS_STAGES : STAGES;
+  const byStage = activeStages
     .map((s) => ({ stage: s, matches: matches.filter((m) => m.stage === s) }))
     .filter((g) => g.matches.length > 0);
 
@@ -315,7 +476,7 @@ export default function AdminPage() {
     completed: matches.filter((m) => m.status === 'completed').length,
   };
 
-  const isPlacementSport = selected ? PLACEMENT_SPORTS.includes(selected.sport_name) : false;
+  const isPlacementSport  = selected ? PLACEMENT_SPORTS.includes(selected.sport_name) : false;
 
   if (!unlocked) return <PinGate onUnlock={unlock} />;
 
@@ -407,7 +568,7 @@ export default function AdminPage() {
                     <div>
                       <label className="label">Stage</label>
                       <select className="input" value={addForm.stage} onChange={(e) => setAddForm({ ...addForm, stage: e.target.value, group_id: '', team1_id: '', team2_id: '' })}>
-                        {STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        {activeStages.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
                     <div>
@@ -464,7 +625,7 @@ export default function AdminPage() {
                 </div>
               )}
 
-              {/* Placement panel for non-bracket sports */}
+              {/* Placement panel for non-bracket individual sports */}
               {isPlacementSport && (
                 <PlacementPanel
                   key={selected.id}
@@ -472,6 +633,16 @@ export default function AdminPage() {
                   onSaved={() => flash('Placements saved')}
                   onError={() => flash('Failed to save placements', false)}
                   onCleared={() => flash('Data cleared')}
+                />
+              )}
+
+              {/* Darts groups panel */}
+              {isDarts && (
+                <DartsGroupsPanel
+                  key={selected.id}
+                  tournament={selected}
+                  onMsg={(text, ok = true) => flash(text, ok)}
+                  onGroupsChanged={() => loadMatches(selected)}
                 />
               )}
 

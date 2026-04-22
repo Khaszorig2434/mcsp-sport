@@ -2,7 +2,7 @@ export type SportType = 'esports' | 'traditional';
 export type Gender    = 'male' | 'female' | 'mixed';
 export type TournamentStatus = 'upcoming' | 'ongoing' | 'completed';
 export type MatchStatus      = 'upcoming' | 'live' | 'completed';
-export type Stage            = 'group' | 'semi' | 'bronze' | 'final';
+export type Stage            = 'group' | 'quarterfinal' | 'semi' | 'bronze' | 'final';
 
 export interface Sport {
   id:         number;
@@ -122,6 +122,24 @@ export interface LeaderboardEntry {
   silver:       number;
   bronze:       number;
   results:      LeaderboardResult[];
+}
+
+export interface DartsGroup {
+  id:    number;
+  name:  string;
+  teams: Array<{
+    id:          number;
+    name:        string;
+    short_name:  string | null;
+    player_name: string | null;
+  }>;
+}
+
+export interface DartsBracket {
+  quarterfinals: BracketMatch[];
+  semifinals:    BracketMatch[];
+  bronze:        BracketMatch | null;
+  final:         BracketMatch | null;
 }
 
 export interface LeaderboardData {

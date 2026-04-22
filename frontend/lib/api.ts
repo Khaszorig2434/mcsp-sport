@@ -1,5 +1,5 @@
 import type {
-  Tournament, Match, StandingsGroup, Bracket, LeaderboardData,
+  Tournament, Match, StandingsGroup, Bracket, LeaderboardData, DartsGroup, DartsBracket,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL
@@ -103,9 +103,76 @@ export const api = {
     },
   },
 
+  darts: {
+    groups: {
+      list(tournamentId: number | string) {
+        return get<DartsGroup[]>(`/darts/groups?tournamentId=${tournamentId}`);
+      },
+      async create(body: { tournament_id: number; name: string; team1_id: number; team2_id: number }) {
+        const res = await fetch(`${API_BASE}/darts/groups`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error('Failed to create darts group');
+        return res.json();
+      },
+      async delete(id: number | string) {
+        const res = await fetch(`${API_BASE}/darts/groups/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete darts group');
+        return res.json();
+      },
+    },
+
+    matches: {
+      list(params: { tournamentId: number | string; stage?: string; status?: string }) {
+        const qs = '?' + new URLSearchParams(
+          Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][]
+        ).toString();
+        return get<Match[]>(`/darts/matches${qs}`);
+      },
+      async update(id: number | string, body: { score1?: number; score2?: number; status?: string }) {
+        const res = await fetch(`${API_BASE}/darts/matches/${id}`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`Failed to update darts match ${id}`);
+        return res.json();
+      },
+      async create(body: { tournament_id: number; group_id?: number | null; stage: string; team1_id?: number | null; team2_id?: number | null; match_date?: string; status?: string }) {
+        const res = await fetch(`${API_BASE}/darts/matches`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error('Failed to create darts match');
+        return res.json();
+      },
+      async delete(id: number | string) {
+        const res = await fetch(`${API_BASE}/darts/matches/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`Failed to delete darts match ${id}`);
+        return res.json();
+      },
+    },
+
+    bracket: {
+      get(tournamentId: number | string) {
+        return get<DartsBracket>(`/darts/bracket?tournamentId=${tournamentId}`);
+      },
+    },
+
+    standings: {
+      get(tournamentId: number | string) {
+        return get<StandingsGroup[]>(`/darts/standings?tournamentId=${tournamentId}`);
+      },
+    },
+  },
+
   teams: {
-    list() {
-      return get<{ id: number; name: string; short_name: string | null; country: string | null; player_name: string | null }[]>('/tournaments/teams');
+    list(params?: { sportId?: number }) {
+      const qs = params?.sportId ? `?sportId=${params.sportId}` : '';
+      return get<{ id: number; name: string; short_name: string | null; country: string | null; player_name: string | null }[]>(`/tournaments/teams${qs}`);
     },
     async update(id: number, player_name: string) {
       const res = await fetch(`${API_BASE}/tournaments/teams/${id}`, {
