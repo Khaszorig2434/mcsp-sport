@@ -97,8 +97,8 @@ export default async function LeaderboardPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-8">
 
-        {/* Podium top 3 */}
-        {top3.length > 0 && (
+        {/* Podium top 3 түр хаасан*/}
+        {/* {top3.length > 0 && (
           <div className="grid grid-cols-3 gap-3">
             {[top3[1], top3[0], top3[2]].filter(Boolean).map((entry, i) => {
               const isFirst = entry.rank === 1;
@@ -128,12 +128,12 @@ export default async function LeaderboardPage() {
               );
             })}
           </div>
-        )}
+        )} */}
 
         {/* Full rankings table */}
         <div className="bg-surface-card border border-surface-border rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-surface-border flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground">Full Rankings</h2>
+            <h2 className="text-sm font-bold text-foreground">Current Rankings</h2>
             <span className="text-xs text-muted">{leaderboard.length} teams</span>
           </div>
 

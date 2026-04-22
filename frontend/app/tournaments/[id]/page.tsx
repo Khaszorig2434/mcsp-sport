@@ -98,7 +98,11 @@ export default async function TournamentPage({ params }: PageProps) {
       </div>
 
       {/* ── Tabs ──────────────────────────────────────────── */}
-      <TournamentTabs tournamentId={params.id} />
+      <TournamentTabs
+        tournamentId={params.id}
+        sportName={tournament.sport_name}
+        groups={tournament.groups ?? []}
+      />
     </div>
   );
 }
