@@ -139,6 +139,61 @@ function PlacementPanel({
   );
 }
 
+/* ── Teams Panel ── */
+function TeamsPanel({ onMsg }: { onMsg: (text: string, ok?: boolean) => void }) {
+  const [teams,   setTeams]   = useState<{ id: number; name: string; player_name: string | null }[]>([]);
+  const [edits,   setEdits]   = useState<Record<number, string>>({});
+  const [saving,  setSaving]  = useState<number | null>(null);
+
+  useEffect(() => {
+    api.teams.list().then((rows) => {
+      setTeams(rows);
+      const init: Record<number, string> = {};
+      rows.forEach((t) => { init[t.id] = t.player_name ?? ''; });
+      setEdits(init);
+    }).catch(() => {});
+  }, []);
+
+  const save = async (id: number) => {
+    setSaving(id);
+    try {
+      await api.teams.update(id, edits[id] ?? '');
+      setTeams((prev) => prev.map((t) => t.id === id ? { ...t, player_name: edits[id] } : t));
+      onMsg('Player name saved');
+    } catch { onMsg('Failed to save', false); }
+    finally  { setSaving(null); }
+  };
+
+  return (
+    <div className="space-y-3 max-w-lg">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-[10px] font-bold text-muted uppercase tracking-widest">Team Player Names</span>
+        <div className="flex-1 h-px bg-surface-border" />
+      </div>
+      {teams.map((t) => (
+        <div key={t.id} className="flex items-center gap-3 bg-surface-card border border-surface-border rounded-xl px-4 py-3">
+          <span className="text-xs font-bold text-muted w-6">{t.id}</span>
+          <span className="text-sm font-semibold text-foreground w-24 shrink-0">{t.name}</span>
+          <input
+            className="input flex-1 text-sm"
+            placeholder="Player name…"
+            value={edits[t.id] ?? ''}
+            onChange={(e) => setEdits((prev) => ({ ...prev, [t.id]: e.target.value }))}
+            onKeyDown={(e) => e.key === 'Enter' && save(t.id)}
+          />
+          <button
+            onClick={() => save(t.id)}
+            disabled={saving === t.id}
+            className="bg-brand text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-brand-dark transition-colors disabled:opacity-40 shrink-0"
+          >
+            {saving === t.id ? '…' : 'Save'}
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ── PIN Gate ── */
 function PinGate({ onUnlock }: { onUnlock: () => void }) {
   const [pin, setPin] = useState('');
@@ -184,6 +239,7 @@ function PinGate({ onUnlock }: { onUnlock: () => void }) {
 
 export default function AdminPage() {
   const [unlocked,   setUnlocked]   = useState(false);
+  const [adminView,  setAdminView]  = useState<'matches' | 'teams'>('matches');
   const [tournaments,setTournaments]= useState<Tournament[]>([]);
   const [selected,   setSelected]   = useState<Tournament | null>(null);
   const [groups,     setGroups]     = useState<Group[]>([]);
@@ -324,6 +380,20 @@ export default function AdminPage() {
           <h1 className="text-sm font-bold text-foreground leading-none">Admin Panel</h1>
           <span className="text-xs text-muted">Match Management</span>
         </div>
+        <div className="flex items-center gap-1 ml-6 bg-surface rounded-lg p-1">
+          {(['matches', 'teams'] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setAdminView(v)}
+              className={cn(
+                'text-xs font-semibold px-3 py-1.5 rounded-md transition-colors capitalize',
+                adminView === v ? 'bg-brand text-white' : 'text-muted hover:text-foreground',
+              )}
+            >
+              {v === 'matches' ? 'Matches' : 'Teams'}
+            </button>
+          ))}
+        </div>
         {msg && (
           <span className={cn('ml-auto text-xs font-medium px-3 py-1.5 rounded-full', msg.ok ? 'bg-win/15 text-win' : 'bg-loss/15 text-loss')}>
             {msg.text}
@@ -331,7 +401,13 @@ export default function AdminPage() {
         )}
       </div>
 
-      <div className="flex h-[calc(100vh-64px)]">
+      {adminView === 'teams' && (
+        <div className="max-w-2xl mx-auto px-6 py-8">
+          <TeamsPanel onMsg={flash} />
+        </div>
+      )}
+
+      {adminView === 'matches' && <div className="flex h-[calc(100vh-64px)]">
         {/* Sidebar */}
         <aside className="w-60 shrink-0 border-r border-surface-border bg-surface-card overflow-y-auto">
           <p className="text-[10px] font-bold text-muted uppercase tracking-widest px-4 py-3 border-b border-surface-border">
@@ -577,7 +653,8 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </div>
+      </div>}
+
     </div>
   );
 }

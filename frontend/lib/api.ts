@@ -105,7 +105,16 @@ export const api = {
 
   teams: {
     list() {
-      return get<{ id: number; name: string; short_name: string | null; country: string | null }[]>('/tournaments/teams');
+      return get<{ id: number; name: string; short_name: string | null; country: string | null; player_name: string | null }[]>('/tournaments/teams');
+    },
+    async update(id: number, player_name: string) {
+      const res = await fetch(`${API_BASE}/tournaments/teams/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ player_name }),
+      });
+      if (!res.ok) throw new Error('Failed to update team');
+      return res.json();
     },
   },
 };
