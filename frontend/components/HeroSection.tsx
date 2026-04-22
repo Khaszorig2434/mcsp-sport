@@ -24,7 +24,7 @@ function PlayerImage({ src, side }: { src: string; side: 'left' | 'right' }) {
 
 export default function HeroSection() {
   return (
-    <section className="relative overflow-hidden" style={{ height: 'calc(100vh - 64px)', minHeight: 480 }}>
+    <section className="relative overflow-hidden h-[55vw] min-h-[280px] sm:h-[50vh] md:h-[calc(100vh-64px)]" style={{ maxHeight: '100vh' }}>
 
       {/* ── Split background ── */}
       <div className="absolute inset-0 flex">
@@ -57,8 +57,8 @@ export default function HeroSection() {
       </div>
 
       {/* ── Center content ── */}
-      <div className="absolute inset-0 flex flex-col items-center justify-end pb-16 z-20 px-4 animate-fade-in-up">
-        <p className="text-white/90 text-center text-base md:text-lg max-w-sm leading-relaxed drop-shadow-lg">
+      <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 md:pb-16 z-20 px-4 animate-fade-in-up">
+        <p className="text-white/90 text-center text-sm md:text-lg max-w-sm leading-relaxed drop-shadow-lg hidden sm:block">
           Join the most thrilling league of the season. Whether you&apos;re a rising team
           or a seasoned champion — the road to victory starts here.
         </p>

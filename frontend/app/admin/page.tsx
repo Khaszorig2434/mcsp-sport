@@ -287,7 +287,7 @@ export default function AdminPage() {
         team1_id:   addForm.team1_id  ? Number(addForm.team1_id)  : null,
         team2_id:   addForm.team2_id  ? Number(addForm.team2_id)  : null,
         group_id:   addForm.group_id  ? Number(addForm.group_id)  : null,
-        match_date: addForm.match_date || undefined,
+        match_date: addForm.match_date ? addForm.match_date + ':00+08:00' : undefined,
         status:     addForm.status,
       });
       flash('Match created');

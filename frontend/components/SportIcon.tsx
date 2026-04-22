@@ -9,6 +9,9 @@ const ICON_MAP: Record<string, string> = {
   'table-tennis': '/tournaments/tennis.png',
 };
 
+// Dark-colored icons that need inversion to be visible on dark backgrounds
+const INVERT_IN_DARK = new Set(['chess', 'cs2', 'table-tennis']);
+
 interface Props {
   icon:      string;
   size?:     number;
@@ -18,13 +21,14 @@ interface Props {
 export default function SportIcon({ icon, size = 32, className }: Props) {
   const src = ICON_MAP[icon];
   if (!src) return <span style={{ fontSize: size * 0.75 }}>🏆</span>;
+  const invertClass = INVERT_IN_DARK.has(icon) ? 'dark:invert' : '';
   return (
     <Image
       src={src}
       alt={icon}
       width={size}
       height={size}
-      className={className}
+      className={[invertClass, className].filter(Boolean).join(' ')}
       style={{ objectFit: 'contain' }}
     />
   );
