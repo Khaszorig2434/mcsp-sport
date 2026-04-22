@@ -157,7 +157,7 @@ async function createDartsGroup(req, res) {
     res.status(201).json({ id: group.id, name });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Failed to create darts group' });
+    res.status(500).json({ error: 'Failed to create darts group', detail: err.message });
   }
 }
 
