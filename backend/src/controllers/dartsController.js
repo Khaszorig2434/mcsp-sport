@@ -103,17 +103,33 @@ async function getDartsGroups(req, res) {
 }
 
 // POST /api/darts/groups
-// Body: { tournament_id, name, team1_id, team2_id }
-// Creates the group, adds both members, and auto-creates the group match.
+// Body: { tournament_id, name, player1_name, player2_name }
+// Creates a team record for each player name, then creates the group + match.
 async function createDartsGroup(req, res) {
   try {
-    const { tournament_id, name, team1_id, team2_id } = req.body;
-    if (!tournament_id || !name || !team1_id || !team2_id) {
-      return res.status(400).json({ error: 'tournament_id, name, team1_id and team2_id are required' });
+    const { tournament_id, name, player1_name, player2_name } = req.body;
+    if (!tournament_id || !name || !player1_name?.trim() || !player2_name?.trim()) {
+      return res.status(400).json({ error: 'tournament_id, name, player1_name and player2_name are required' });
     }
-    if (Number(team1_id) === Number(team2_id)) {
-      return res.status(400).json({ error: 'team1 and team2 must be different' });
+    if (player1_name.trim().toLowerCase() === player2_name.trim().toLowerCase()) {
+      return res.status(400).json({ error: 'Players must have different names' });
     }
+
+    // Get the sport_id so we tag the new team rows correctly
+    const { rows: [tournament] } = await db.query(
+      `SELECT sport_id FROM tournaments WHERE id = $1`, [tournament_id]
+    );
+    if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
+
+    // Create a team record for each player
+    const { rows: [team1] } = await db.query(
+      `INSERT INTO teams (name, sport_id) VALUES ($1, $2) RETURNING id`,
+      [player1_name.trim(), tournament.sport_id]
+    );
+    const { rows: [team2] } = await db.query(
+      `INSERT INTO teams (name, sport_id) VALUES ($1, $2) RETURNING id`,
+      [player2_name.trim(), tournament.sport_id]
+    );
 
     const { rows: [group] } = await db.query(
       `INSERT INTO darts_groups (tournament_id, name) VALUES ($1, $2) RETURNING id`,
@@ -122,17 +138,17 @@ async function createDartsGroup(req, res) {
 
     await db.query(
       `INSERT INTO darts_group_teams (group_id, team_id) VALUES ($1, $2), ($1, $3)`,
-      [group.id, team1_id, team2_id]
+      [group.id, team1.id, team2.id]
     );
 
     // Auto-create the one match for this group
     await db.query(
       `INSERT INTO darts_matches (tournament_id, group_id, stage, team1_id, team2_id, status)
        VALUES ($1, $2, 'group', $3, $4, 'upcoming')`,
-      [tournament_id, group.id, team1_id, team2_id]
+      [tournament_id, group.id, team1.id, team2.id]
     );
 
-    res.status(201).json({ id: group.id, name, team1_id: Number(team1_id), team2_id: Number(team2_id) });
+    res.status(201).json({ id: group.id, name });
   } catch (err) {
     console.error(err);
     if (err.code === '23505') {

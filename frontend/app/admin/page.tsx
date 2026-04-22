@@ -143,8 +143,8 @@ function PlacementPanel({
 
 /* ── Darts Groups Panel ── */
 
-interface DartsAddGroupState { name: string; team1_id: string; team2_id: string }
-const emptyDartsGroup = (): DartsAddGroupState => ({ name: '', team1_id: '', team2_id: '' });
+interface DartsAddGroupState { name: string; player1_name: string; player2_name: string }
+const emptyDartsGroup = (): DartsAddGroupState => ({ name: '', player1_name: '', player2_name: '' });
 
 function DartsGroupsPanel({
   tournament,
@@ -155,30 +155,26 @@ function DartsGroupsPanel({
   onMsg: (text: string, ok?: boolean) => void;
   onGroupsChanged: () => void;
 }) {
-  const [groups,   setGroups]   = useState<DartsGroup[]>([]);
-  const [allTeams, setAllTeams] = useState<{ id: number; name: string; player_name: string | null }[]>([]);
-  const [showAdd,  setShowAdd]  = useState(false);
-  const [addForm,  setAddForm]  = useState<DartsAddGroupState>(emptyDartsGroup());
-  const [saving,   setSaving]   = useState(false);
+  const [groups,  setGroups]  = useState<DartsGroup[]>([]);
+  const [showAdd, setShowAdd] = useState(false);
+  const [addForm, setAddForm] = useState<DartsAddGroupState>(emptyDartsGroup());
+  const [saving,  setSaving]  = useState(false);
 
   const load = useCallback(() => {
     api.darts.groups.list(tournament.id).then(setGroups).catch(() => {});
   }, [tournament.id]);
 
-  useEffect(() => {
-    load();
-    api.teams.list({ sportId: tournament.sport_id }).then(setAllTeams).catch(() => {});
-  }, [tournament.id, tournament.sport_id, load]);
+  useEffect(() => { load(); }, [load]);
 
   const handleAdd = async () => {
-    if (!addForm.name.trim() || !addForm.team1_id || !addForm.team2_id) return;
+    if (!addForm.name.trim() || !addForm.player1_name.trim() || !addForm.player2_name.trim()) return;
     setSaving(true);
     try {
       await api.darts.groups.create({
         tournament_id: tournament.id,
         name:          addForm.name.trim(),
-        team1_id:      Number(addForm.team1_id),
-        team2_id:      Number(addForm.team2_id),
+        player1_name:  addForm.player1_name.trim(),
+        player2_name:  addForm.player2_name.trim(),
       });
       onMsg('Group created');
       setShowAdd(false);
@@ -203,7 +199,7 @@ function DartsGroupsPanel({
     } catch { onMsg('Failed to delete group', false); }
   };
 
-  const team2Choices = allTeams.filter((t) => String(t.id) !== addForm.team1_id);
+  const canSubmit = addForm.name.trim() && addForm.player1_name.trim() && addForm.player2_name.trim();
 
   return (
     <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
@@ -232,7 +228,7 @@ function DartsGroupsPanel({
             <div>
               <span className="text-xs font-bold text-foreground mr-2">Group {g.name}</span>
               <span className="text-xs text-muted">
-                {g.teams.map((t) => t.player_name || t.name).join(' vs ')}
+                {g.teams.map((t) => t.name).join(' vs ')}
               </span>
             </div>
             <button
@@ -260,22 +256,26 @@ function DartsGroupsPanel({
           </div>
           <div>
             <label className="label">Player 1</label>
-            <select className="input" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value, team2_id: '' })}>
-              <option value="">— select —</option>
-              {allTeams.map((t) => <option key={t.id} value={t.id}>{t.player_name || t.name}</option>)}
-            </select>
+            <input
+              className="input"
+              placeholder="Player name"
+              value={addForm.player1_name}
+              onChange={(e) => setAddForm({ ...addForm, player1_name: e.target.value })}
+            />
           </div>
           <div>
             <label className="label">Player 2</label>
-            <select className="input" value={addForm.team2_id} onChange={(e) => setAddForm({ ...addForm, team2_id: e.target.value })} disabled={!addForm.team1_id}>
-              <option value="">— select —</option>
-              {team2Choices.map((t) => <option key={t.id} value={t.id}>{t.player_name || t.name}</option>)}
-            </select>
+            <input
+              className="input"
+              placeholder="Player name"
+              value={addForm.player2_name}
+              onChange={(e) => setAddForm({ ...addForm, player2_name: e.target.value })}
+            />
           </div>
           <div className="sm:col-span-3">
             <button
               onClick={handleAdd}
-              disabled={saving || !addForm.name.trim() || !addForm.team1_id || !addForm.team2_id}
+              disabled={saving || !canSubmit}
               className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
             >
               {saving ? 'Creating…' : 'Create Group'}

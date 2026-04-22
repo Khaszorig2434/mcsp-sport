@@ -108,13 +108,16 @@ export const api = {
       list(tournamentId: number | string) {
         return get<DartsGroup[]>(`/darts/groups?tournamentId=${tournamentId}`);
       },
-      async create(body: { tournament_id: number; name: string; team1_id: number; team2_id: number }) {
+      async create(body: { tournament_id: number; name: string; player1_name: string; player2_name: string }) {
         const res = await fetch(`${API_BASE}/darts/groups`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify(body),
         });
-        if (!res.ok) throw new Error('Failed to create darts group');
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? 'Failed to create darts group');
+        }
         return res.json();
       },
       async delete(id: number | string) {

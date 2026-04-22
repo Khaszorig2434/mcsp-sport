@@ -4,6 +4,7 @@ import TournamentTabs from './TournamentTabs';
 import { formatDate, genderLabel } from '@/lib/utils';
 import { Calendar, MapPin } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
+import type { DartsGroup } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,12 @@ export default async function TournamentPage({ params }: PageProps) {
     tournament = await api.tournaments.get(params.id);
   } catch {
     notFound();
+  }
+
+  // For darts, load groups from the darts-specific table
+  let dartsGroups: DartsGroup[] | null = null;
+  if (tournament.sport_name === 'Darts') {
+    dartsGroups = await api.darts.groups.list(params.id).catch(() => []);
   }
 
   const statusStyles: Record<string, string> = {
@@ -72,8 +79,29 @@ export default async function TournamentPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Groups summary */}
-        {tournament.groups && tournament.groups.length > 0 && (
+        {/* Groups summary — darts uses its own groups table */}
+        {dartsGroups && dartsGroups.length > 0 && (
+          <div className="flex flex-wrap gap-6 mt-5 pt-5 border-t border-surface-border">
+            {dartsGroups.map((g) => (
+              <div key={g.id}>
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1.5">
+                  Group {g.name}
+                </p>
+                <div className="flex flex-col gap-1">
+                  {g.teams.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-surface-border" />
+                      <span className="text-sm text-gray-300">{t.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Groups summary — all other sports */}
+        {!dartsGroups && tournament.groups && tournament.groups.length > 0 && (
           <div className="flex flex-wrap gap-6 mt-5 pt-5 border-t border-surface-border">
             {tournament.groups.map((g) => (
               <div key={g.id}>
