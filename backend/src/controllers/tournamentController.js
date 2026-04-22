@@ -201,4 +201,4 @@ async function updateTeam(req, res) {
   }
 }
 
-module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements, clearIndividualPlacements, listTeams };
+module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements, clearIndividualPlacements, listTeams, updateTeam };
