@@ -12,11 +12,12 @@ export interface Sport {
 }
 
 export interface Team {
-  id:         number;
-  name:       string;
-  short_name: string;
-  country:    string;
-  logo_url:   string | null;
+  id:          number;
+  name:        string;
+  short_name:  string;
+  country:     string;
+  logo_url:    string | null;
+  player_name: string | null;
 }
 
 export interface Group {
