@@ -23,10 +23,9 @@ interface PlacementEntry { player_name: string; team_id: string }
 const emptyEntry = (): PlacementEntry => ({ player_name: '', team_id: '' });
 
 function PlacementPanel({
-  tournamentId, allTeams, onSaved, onError, onCleared,
+  tournamentId, onSaved, onError, onCleared,
 }: {
   tournamentId: number;
-  allTeams: Team[];
   onSaved: () => void;
   onError: () => void;
   onCleared: () => void;
@@ -34,11 +33,13 @@ function PlacementPanel({
   const [entries, setEntries] = useState<PlacementEntry[]>([
     emptyEntry(), emptyEntry(), emptyEntry(), emptyEntry(),
   ]);
+  const [allTeams, setAllTeams] = useState<{ id: number; name: string }[]>([]);
   const [saving,   setSaving]   = useState(false);
   const [clearing, setClearing] = useState(false);
 
-  // Load existing placements on mount
+  // Load all teams + existing placements on mount
   useEffect(() => {
+    api.teams.list().then(setAllTeams).catch(() => {});
     api.tournaments.getIndividualPlacements(tournamentId).then((rows) => {
       if (!rows.length) return;
       setEntries((prev) => prev.map((e, i) => {
@@ -454,7 +455,6 @@ export default function AdminPage() {
                 <PlacementPanel
                   key={selected.id}
                   tournamentId={selected.id}
-                  allTeams={allTeams}
                   onSaved={() => flash('Placements saved')}
                   onError={() => flash('Failed to save placements', false)}
                   onCleared={() => flash('Data cleared')}

@@ -102,4 +102,10 @@ export const api = {
       return get<Match[]>('/schedule');
     },
   },
+
+  teams: {
+    list() {
+      return get<{ id: number; name: string; short_name: string | null; country: string | null }[]>('/tournaments/teams');
+    },
+  },
 };

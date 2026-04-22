@@ -171,4 +171,17 @@ async function clearIndividualPlacements(req, res) {
   }
 }
 
-module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements, clearIndividualPlacements };
+// GET /api/teams
+async function listTeams(req, res) {
+  try {
+    const { rows } = await db.query(
+      `SELECT id, name, short_name, country FROM teams ORDER BY id`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+}
+
+module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements, clearIndividualPlacements, listTeams };
