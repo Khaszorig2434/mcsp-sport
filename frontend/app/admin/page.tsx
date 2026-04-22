@@ -335,6 +335,7 @@ export default function AdminPage() {
   const [addForm,    setAddForm]    = useState<AddState>(emptyAdd);
   const [saving,     setSaving]     = useState(false);
   const [msg,        setMsg]        = useState<{ text: string; ok: boolean } | null>(null);
+  const [dartsGroups,setDartsGroups]= useState<DartsGroup[]>([]);
   const isDarts = selected?.sport_name === DARTS_SPORT;
 
   /* persist unlock for the browser session */
@@ -352,8 +353,12 @@ export default function AdminPage() {
     setLoading(true); setEditingId(null); setShowAdd(false);
     try {
       if (t.sport_name === DARTS_SPORT) {
-        const data = await api.darts.matches.list({ tournamentId: t.id });
+        const [data, dGroups] = await Promise.all([
+          api.darts.matches.list({ tournamentId: t.id }),
+          api.darts.groups.list(t.id),
+        ]);
         setMatches(data);
+        setDartsGroups(dGroups);
         setGroups([]);
       } else {
         const [data, detail] = await Promise.all([
@@ -366,7 +371,7 @@ export default function AdminPage() {
     } finally { setLoading(false); }
   }, []);
 
-  const selectTournament = (t: Tournament) => { setSelected(t); loadMatches(t); };
+  const selectTournament = (t: Tournament) => { setSelected(t); setDartsGroups([]); loadMatches(t); };
 
   const flash = (text: string, ok = true) => {
     setMsg({ text, ok });
@@ -374,8 +379,14 @@ export default function AdminPage() {
   };
 
   /* ── helpers ── */
-  const allTeams: Team[] = groups.flatMap((g) => g.teams ?? []);
+  const allTeams: Team[] = isDarts
+    ? dartsGroups.flatMap((g) => g.teams as Team[])
+    : groups.flatMap((g) => g.teams ?? []);
   const teamsForGroup = (groupId: string) => {
+    if (isDarts) {
+      const g = dartsGroups.find((g) => String(g.id) === groupId);
+      return (g?.teams ?? allTeams) as Team[];
+    }
     const g = groups.find((g) => String(g.id) === groupId);
     return g?.teams ?? allTeams;
   };
@@ -583,10 +594,10 @@ export default function AdminPage() {
                       <select className="input" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value })}>
                         <option value="">— TBD —</option>
                         {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams).map((t) => (
-                          <option key={t.id} value={t.id}>{t.name}</option>
+                          <option key={t.id} value={t.id}>{t.player_name || t.name}</option>
                         ))}
                       </select>
-                      {addForm.team1_id && (
+                      {!isDarts && addForm.team1_id && (
                         <input className="input mt-1.5" placeholder="Player name (optional)" value={addForm.player1_name}
                           onChange={(e) => setAddForm({ ...addForm, player1_name: e.target.value })} />
                       )}
@@ -597,9 +608,9 @@ export default function AdminPage() {
                         <option value="">— TBD —</option>
                         {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams)
                           .filter((t) => String(t.id) !== addForm.team1_id)
-                          .map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                          .map((t) => <option key={t.id} value={t.id}>{t.player_name || t.name}</option>)}
                       </select>
-                      {addForm.team2_id && (
+                      {!isDarts && addForm.team2_id && (
                         <input className="input mt-1.5" placeholder="Player name (optional)" value={addForm.player2_name}
                           onChange={(e) => setAddForm({ ...addForm, player2_name: e.target.value })} />
                       )}
