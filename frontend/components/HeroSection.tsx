@@ -41,15 +41,7 @@ export default function HeroSection() {
       </div>
 
       {/* ── Backdrop text ── */}
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden pointer-events-none select-none animate-fade-in">
-        <span
-          className="font-display text-white font-black leading-none whitespace-nowrap tracking-tighter"
-          style={{ fontSize: 'clamp(72px, 17vw, 220px)', opacity: 0.07 }}
-        >
-          MCSP SPORT
-        </span>
-      </div>
-
+      
       {/* ── Decorative circles ── */}
       <div className="absolute top-1/4 left-1/4 w-64 h-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 rounded-full bg-white/5 blur-3xl pointer-events-none" />
