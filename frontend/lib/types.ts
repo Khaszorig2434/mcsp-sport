@@ -67,6 +67,7 @@ export interface StandingRow {
   team_name:        string;
   short_name:       string;
   logo_url:         string | null;
+  player_name:      string | null;
   group_id:         number;
   group_name:       string;
   wins:             number;

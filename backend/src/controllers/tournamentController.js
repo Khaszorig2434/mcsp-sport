@@ -185,15 +185,13 @@ async function clearIndividualPlacements(req, res) {
 // GET /api/tournaments/teams?sportId=
 async function listTeams(req, res) {
   try {
-    const { sportId } = req.query;
-    let query = `SELECT id, name, short_name, country, player_name FROM teams`;
-    const params = [];
-    if (sportId) {
-      query += ` WHERE sport_id = $1`;
-      params.push(sportId);
-    }
-    query += ` ORDER BY name`;
-    const { rows } = await db.query(query, params);
+    const { rows } = await db.query(`
+      SELECT t.id, t.name, t.short_name, t.country, t.player_name
+      FROM teams t
+      JOIN sports s ON s.id = t.sport_id
+      WHERE s.name != 'Darts'
+      ORDER BY t.name
+    `);
     res.json(rows);
   } catch (err) {
     console.error(err);

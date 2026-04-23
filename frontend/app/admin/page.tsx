@@ -606,7 +606,7 @@ export default function AdminPage() {
                       <select className="input" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value })}>
                         <option value="">— TBD —</option>
                         {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams).map((t) => (
-                          <option key={t.id} value={t.id}>{t.player_name || t.name}</option>
+                          <option key={t.id} value={t.id}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>
                         ))}
                       </select>
                       {!isDarts && addForm.team1_id && (
@@ -620,7 +620,7 @@ export default function AdminPage() {
                         <option value="">— TBD —</option>
                         {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams)
                           .filter((t) => String(t.id) !== addForm.team1_id)
-                          .map((t) => <option key={t.id} value={t.id}>{t.player_name || t.name}</option>)}
+                          .map((t) => <option key={t.id} value={t.id}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>)}
                       </select>
                       {!isDarts && addForm.team2_id && (
                         <input className="input mt-1.5" placeholder="Player name (optional)" value={addForm.player2_name}

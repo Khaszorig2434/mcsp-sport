@@ -67,9 +67,12 @@ export default function StandingsTable({ groups }: Props) {
                             'font-medium',
                             isTop2 ? 'text-foreground' : 'text-muted',
                           )}>
-                            {team.team_name}
+                            {team.player_name ? `${team.player_name}` : team.team_name}
                           </span>
-                          {team.short_name && (
+                          {team.player_name && (
+                            <span className="text-xs text-gray-500">({team.team_name})</span>
+                          )}
+                          {!team.player_name && team.short_name && (
                             <span className="text-xs text-gray-600 hidden sm:inline">
                               ({team.short_name})
                             </span>
