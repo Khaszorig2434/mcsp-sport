@@ -240,6 +240,7 @@ function BracketMatchCard({
       <div className="bg-surface-card">
         <BracketTeamRow
           name={match.team1?.player_name ?? match.team1?.name ?? 'TBD'}
+          teamName={match.team1?.player_name ? match.team1.name : null}
           score={match.score1}
           isWinner={team1Won}
           isLoser={isCompleted && !team1Won && !!match.team1}
@@ -248,6 +249,7 @@ function BracketMatchCard({
         <div className="h-px bg-surface-border" />
         <BracketTeamRow
           name={match.team2?.player_name ?? match.team2?.name ?? 'TBD'}
+          teamName={match.team2?.player_name ? match.team2.name : null}
           score={match.score2}
           isWinner={team2Won}
           isLoser={isCompleted && !team2Won && !!match.team2}
@@ -259,9 +261,9 @@ function BracketMatchCard({
 }
 
 function BracketTeamRow({
-  name, score, isWinner, isLoser, isPending,
+  name, teamName, score, isWinner, isLoser, isPending,
 }: {
-  name: string; score: number | null;
+  name: string; teamName: string | null; score: number | null;
   isWinner: boolean; isLoser: boolean; isPending: boolean;
 }) {
   return (
@@ -273,15 +275,20 @@ function BracketTeamRow({
     )}>
       <div className="flex items-center gap-2 min-w-0">
         {isWinner && <span className="text-win text-xs shrink-0">▶</span>}
-        <span className={cn(
-          'text-sm font-medium truncate',
-          isWinner  && 'text-win font-semibold',
-          isLoser   && 'text-gray-500 line-through decoration-gray-600',
-          isPending && 'text-gray-600 italic',
-          !isWinner && !isLoser && !isPending && 'text-foreground',
-        )}>
-          {name}
-        </span>
+        <div className="min-w-0">
+          <span className={cn(
+            'text-sm font-medium truncate block',
+            isWinner  && 'text-win font-semibold',
+            isLoser   && 'text-gray-500 line-through decoration-gray-600',
+            isPending && 'text-gray-600 italic',
+            !isWinner && !isLoser && !isPending && 'text-foreground',
+          )}>
+            {name}
+          </span>
+          {teamName && (
+            <span className="text-[10px] text-gray-500 truncate block">{teamName}</span>
+          )}
+        </div>
       </div>
       {score !== null
         ? <span className={cn('text-base font-bold tabular-nums ml-3 shrink-0', isWinner && 'text-win', isLoser && 'text-gray-600', !isWinner && !isLoser && 'text-foreground')}>{score}</span>

@@ -91,7 +91,9 @@ export default async function TournamentPage({ params }: PageProps) {
                   {g.teams.map((t) => (
                     <div key={t.id} className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-surface-border" />
-                      <span className="text-sm text-gray-300">{t.name}</span>
+                      <span className="text-sm text-gray-300">
+                        {t.player_name ? `${t.player_name} ` : ''}<span className="text-gray-500 text-xs">({t.name})</span>
+                      </span>
                     </div>
                   ))}
                 </div>
