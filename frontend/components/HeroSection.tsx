@@ -74,7 +74,7 @@ export default function HeroSection() {
             href="/schedule"
             className="border-2 border-white/70 text-white font-semibold px-7 py-3 rounded text-sm hover:bg-white/10 transition-colors"
           >
-            Live Scores →
+            Schedules →
           </Link>
         </div>
       </div>

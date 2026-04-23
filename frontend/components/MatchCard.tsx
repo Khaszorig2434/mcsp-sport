@@ -55,11 +55,11 @@ export default function MatchCard({ match: m }: Props) {
               team2Won && 'text-muted',
               !team1Won && !team2Won && 'text-foreground',
             )}>
-              {m.team1?.name ?? 'TBD'}
+              {m.team1?.player_name ?? m.team1?.name ?? 'TBD'}
             </p>
-            {m.team1?.short_name && (
-              <p className="text-[10px] text-muted uppercase tracking-wide mt-0.5">{m.team1.short_name}</p>
-            )}
+            <p className="text-[10px] text-muted uppercase tracking-wide mt-0.5">
+              {m.team1?.player_name ? m.team1.name : m.team1?.short_name ?? ''}
+            </p>
           </div>
           {m.score1 !== null && m.score1 !== undefined && (
             <span className={cn(
@@ -100,11 +100,11 @@ export default function MatchCard({ match: m }: Props) {
               team1Won && 'text-muted',
               !team1Won && !team2Won && 'text-foreground',
             )}>
-              {m.team2?.name ?? 'TBD'}
+              {m.team2?.player_name ?? m.team2?.name ?? 'TBD'}
             </p>
-            {m.team2?.short_name && (
-              <p className="text-[10px] text-muted uppercase tracking-wide mt-0.5">{m.team2.short_name}</p>
-            )}
+            <p className="text-[10px] text-muted uppercase tracking-wide mt-0.5">
+              {m.team2?.player_name ? m.team2.name : m.team2?.short_name ?? ''}
+            </p>
           </div>
           {m.score2 !== null && m.score2 !== undefined && (
             <span className={cn(
