@@ -107,8 +107,8 @@ async function getDartsGroups(req, res) {
 async function createDartsGroup(req, res) {
   try {
     const { tournament_id, players } = req.body;
-    if (!tournament_id || !Array.isArray(players) || players.length !== 4) {
-      return res.status(400).json({ error: 'tournament_id and exactly 4 players are required' });
+    if (!tournament_id || !Array.isArray(players) || players.length < 2 || players.length > 6) {
+      return res.status(400).json({ error: 'tournament_id and 2–6 players are required' });
     }
     for (const p of players) {
       if (!p.name?.trim() || !p.team_id) {
@@ -116,9 +116,6 @@ async function createDartsGroup(req, res) {
       }
     }
     const teamIds = players.map((p) => Number(p.team_id));
-    if (new Set(teamIds).size !== 4) {
-      return res.status(400).json({ error: 'All 4 players must be from different teams' });
-    }
 
     // Auto-assign next group letter
     const { rows: [{ count }] } = await db.query(

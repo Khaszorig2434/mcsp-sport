@@ -145,7 +145,7 @@ function PlacementPanel({
 
 interface DartsPlayer { name: string; team_id: string }
 const emptyPlayer = (): DartsPlayer => ({ name: '', team_id: '' });
-const emptyDartsGroup = () => [emptyPlayer(), emptyPlayer(), emptyPlayer(), emptyPlayer()];
+const emptyDartsGroup = () => [emptyPlayer(), emptyPlayer()];
 
 function DartsGroupsPanel({
   tournament,
@@ -213,7 +213,10 @@ function DartsGroupsPanel({
     } catch { onMsg('Failed to delete group', false); }
   };
 
-  const canSubmit = players.every((p) => p.name.trim() && p.team_id);
+  const canSubmit = players.length >= 2 && players.every((p) => p.name.trim() && p.team_id);
+
+  const addPlayer    = () => { if (players.length < 6) setPlayers((prev) => [...prev, emptyPlayer()]); };
+  const removePlayer = (i: number) => { if (players.length > 2) setPlayers((prev) => prev.filter((_, idx) => idx !== i)); };
 
   return (
     <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
@@ -257,7 +260,14 @@ function DartsGroupsPanel({
 
       {showAdd && (
         <div className="space-y-2 pt-1">
-          <p className="text-[10px] text-muted uppercase tracking-widest font-bold mb-2">4 Players per group</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] text-muted uppercase tracking-widest font-bold">{players.length} Players</p>
+            {players.length < 6 && (
+              <button onClick={addPlayer} className="flex items-center gap-1 text-xs text-brand hover:text-brand-dark font-semibold">
+                <Plus size={11} /> Add Player
+              </button>
+            )}
+          </div>
           {players.map((p, i) => (
             <div key={i} className="grid grid-cols-2 gap-2">
               <input
@@ -266,16 +276,23 @@ function DartsGroupsPanel({
                 value={p.name}
                 onChange={(e) => updatePlayer(i, 'name', e.target.value)}
               />
-              <select
-                className="input"
-                value={p.team_id}
-                onChange={(e) => updatePlayer(i, 'team_id', e.target.value)}
-              >
-                <option value="">— Team —</option>
-                {allTeams.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
-                ))}
-              </select>
+              <div className="flex gap-1.5">
+                <select
+                  className="input flex-1"
+                  value={p.team_id}
+                  onChange={(e) => updatePlayer(i, 'team_id', e.target.value)}
+                >
+                  <option value="">— Team —</option>
+                  {allTeams.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+                {players.length > 2 && (
+                  <button onClick={() => removePlayer(i)} className="p-2 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors shrink-0">
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
             </div>
           ))}
           <button
@@ -592,12 +609,15 @@ export default function AdminPage() {
                         {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    {addForm.stage === 'group' && groups.length > 0 && (
+                    {addForm.stage === 'group' && (isDarts ? dartsGroups.length > 0 : groups.length > 0) && (
                       <div>
                         <label className="label">Group</label>
                         <select className="input" value={addForm.group_id} onChange={(e) => setAddForm({ ...addForm, group_id: e.target.value, team1_id: '', team2_id: '' })}>
                           <option value="">— select —</option>
-                          {groups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)}
+                          {isDarts
+                            ? dartsGroups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)
+                            : groups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)
+                          }
                         </select>
                       </div>
                     )}

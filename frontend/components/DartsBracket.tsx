@@ -116,22 +116,76 @@ export default function DartsBracket({ bracket }: Props) {
     );
   }
 
-  // Fallback: fewer than 4 QFs — simple list view
+  // 2-QF bracket: QF1 + QF2 → SF (Final), with optional bronze
+  if (qfs.length === 2) {
+    const [qf1, qf2] = qfs;
+    const sf = sfs[0] ?? null;
+    const CARD = 120;
+    const GAP  = 32;
+    const TOTAL = CARD * 2 + GAP;
+    const SF_TOP = (TOTAL - CARD) / 2;
+    const stroke = 'rgb(var(--surface-border))';
+
+    return (
+      <div className="overflow-x-auto pb-4">
+        <div className="flex items-start gap-0 min-w-[620px]">
+          {/* QF column */}
+          <div className="shrink-0" style={{ width: 260 }}>
+            <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Semi-Finals</div>
+            <BracketMatchCard match={qf1} label="SF1" />
+            <div style={{ height: GAP }} />
+            <BracketMatchCard match={qf2} label="SF2" />
+          </div>
+
+          {/* Connector */}
+          <div className="relative shrink-0" style={{ width: CONN_W, height: TOTAL + 28 }}>
+            <svg width={CONN_W} height={TOTAL + 28} style={{ overflow: 'visible' }}>
+              <line x1={0}        y1={CARD / 2 + 28}          x2={CONN_W / 2} y2={CARD / 2 + 28}          stroke={stroke} strokeWidth={2} />
+              <line x1={0}        y1={CARD + GAP + CARD / 2 + 28} x2={CONN_W / 2} y2={CARD + GAP + CARD / 2 + 28} stroke={stroke} strokeWidth={2} />
+              <line x1={CONN_W/2} y1={CARD / 2 + 28}          x2={CONN_W / 2} y2={CARD + GAP + CARD / 2 + 28} stroke={stroke} strokeWidth={2} />
+              <line x1={CONN_W/2} y1={TOTAL / 2 + 28}         x2={CONN_W}     y2={TOTAL / 2 + 28}         stroke={stroke} strokeWidth={2} />
+            </svg>
+          </div>
+
+          {/* Final column */}
+          <div className="relative shrink-0" style={{ width: 260, height: TOTAL + 28 }}>
+            <div className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Final</div>
+            {sf
+              ? <div style={{ position: 'absolute', top: SF_TOP + 28 }}><BracketMatchCard match={sf} label="Final" highlight /></div>
+              : <div style={{ position: 'absolute', top: SF_TOP + 28 }}><PlaceholderCard label="Final — TBD" /></div>
+            }
+          </div>
+        </div>
+
+        {bronze && (
+          <div className="mt-8 border-t border-surface-border pt-6">
+            <h4 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">Bronze Match · 3rd Place</h4>
+            <div className="max-w-[280px]">
+              <BracketMatchCard match={bronze} label="Bronze" />
+            </div>
+          </div>
+        )}
+        <Legend />
+      </div>
+    );
+  }
+
+  // Fallback: other configs — simple list view
   return (
     <div className="overflow-x-auto pb-4 space-y-8">
       {qfs.length > 0 && (
         <div>
-          <ColumnHeader label="Quarter-Finals" />
+          <ColumnHeader label="Semi-Finals" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            {qfs.map((m, i) => <BracketMatchCard key={m.id} match={m} label={`QF${i + 1}`} />)}
+            {qfs.map((m, i) => <BracketMatchCard key={m.id} match={m} label={`SF${i + 1}`} />)}
           </div>
         </div>
       )}
       {sfs.length > 0 && (
         <div>
-          <ColumnHeader label="Semi-Finals" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-            {sfs.map((m, i) => <BracketMatchCard key={m.id} match={m} label={`SF${i + 1}`} />)}
+          <ColumnHeader label="Final" />
+          <div className="max-w-[280px] mt-3">
+            {sfs.map((m, i) => <BracketMatchCard key={m.id} match={m} label={`Final`} highlight />)}
           </div>
         </div>
       )}

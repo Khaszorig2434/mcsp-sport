@@ -108,7 +108,7 @@ export const api = {
       list(tournamentId: number | string) {
         return get<DartsGroup[]>(`/darts/groups?tournamentId=${tournamentId}`);
       },
-      async create(body: { tournament_id: number; players: { name: string; team_id: number }[] }) {
+      async create(body: { tournament_id: number; players: { name: string; team_id: number }[] }) { // 2–6 players
         const res = await fetch(`${API_BASE}/darts/groups`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
