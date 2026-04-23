@@ -277,7 +277,8 @@ export default async function LeaderboardPage() {
               No completed tournaments yet — check back after finals.
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm" style={{ minWidth: '560px' }}>
               <thead>
                 <tr className="border-b border-surface-border text-[10px] font-bold text-muted uppercase tracking-wider">
                   <th className="text-center px-4 py-3 w-14">#</th>
@@ -337,6 +338,7 @@ export default async function LeaderboardPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 
