@@ -472,11 +472,13 @@ export default function AdminPage() {
     if (!selected) return;
     setSaving(true);
     try {
-      // Save player names to teams if provided
-      if (addForm.team1_id && addForm.player1_name.trim())
-        await api.teams.update(Number(addForm.team1_id), addForm.player1_name.trim()).catch(() => {});
-      if (addForm.team2_id && addForm.player2_name.trim())
-        await api.teams.update(Number(addForm.team2_id), addForm.player2_name.trim()).catch(() => {});
+      // Save player names to teams only for individual sports (not team sports like Basketball)
+      if (!isDarts && PLACEMENT_SPORTS.includes(selected.sport_name)) {
+        if (addForm.team1_id && addForm.player1_name.trim())
+          await api.teams.update(Number(addForm.team1_id), addForm.player1_name.trim()).catch(() => {});
+        if (addForm.team2_id && addForm.player2_name.trim())
+          await api.teams.update(Number(addForm.team2_id), addForm.player2_name.trim()).catch(() => {});
+      }
 
       const matchBody = {
         tournament_id: selected.id,
@@ -755,7 +757,7 @@ export default function AdminPage() {
                                     <span className={cn('font-semibold text-sm', m.winner_id === m.team1?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team1?.id ? 'text-muted line-through' : 'text-foreground')}>
                                       {m.team1?.name ?? <span className="text-muted italic font-normal">TBD</span>}
                                     </span>
-                                    {m.team1?.player_name && (
+                                    {isDarts && m.team1?.player_name && (
                                       <p className="text-[10px] text-muted mt-0.5">{m.team1.player_name}</p>
                                     )}
                                   </td>
@@ -765,7 +767,7 @@ export default function AdminPage() {
                                     <span className={cn('font-semibold text-sm', m.winner_id === m.team2?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team2?.id ? 'text-muted line-through' : 'text-foreground')}>
                                       {m.team2?.name ?? <span className="text-muted italic font-normal">TBD</span>}
                                     </span>
-                                    {m.team2?.player_name && (
+                                    {isDarts && m.team2?.player_name && (
                                       <p className="text-[10px] text-muted mt-0.5">{m.team2.player_name}</p>
                                     )}
                                   </td>
