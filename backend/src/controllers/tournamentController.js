@@ -10,7 +10,12 @@ async function listTournaments(req, res) {
         t.id,
         t.name,
         t.gender,
-        t.status,
+        CASE
+          WHEN t.end_date IS NOT NULL AND t.end_date < NOW() THEN 'completed'
+          WHEN t.start_date IS NOT NULL AND t.start_date <= NOW()
+               AND (t.end_date IS NULL OR t.end_date >= NOW()) THEN 'ongoing'
+          ELSE 'upcoming'
+        END AS status,
         t.prize_pool,
         t.location,
         t.start_date,
@@ -60,7 +65,13 @@ async function getTournament(req, res) {
 
     const tournamentQuery = `
       SELECT
-        t.*,
+        t.id, t.name, t.gender, t.prize_pool, t.location, t.start_date, t.end_date,
+        CASE
+          WHEN t.end_date IS NOT NULL AND t.end_date < NOW() THEN 'completed'
+          WHEN t.start_date IS NOT NULL AND t.start_date <= NOW()
+               AND (t.end_date IS NULL OR t.end_date >= NOW()) THEN 'ongoing'
+          ELSE 'upcoming'
+        END AS status,
         s.name AS sport_name,
         s.type AS sport_type,
         s.icon AS sport_icon

@@ -114,12 +114,8 @@ async function getLeaderboard(req, res) {
       };
     }
 
-    // Seed all team names with 0
-    const { rows: allTeams } = await db.query(`SELECT DISTINCT name FROM teams ORDER BY name`);
+    // Only build teamMap from actual results — don't seed with 0
     const teamMap = {};
-    for (const t of allTeams) {
-      teamMap[t.name] = { team_name: t.name, total_points: 0, gold: 0, silver: 0, bronze: 0, results: [] };
-    }
 
     const applyPlacements = (tournamentData) => {
       const pointsTable = SPORT_POINTS[tournamentData.sport_name] ?? [0, 0, 0, 0];

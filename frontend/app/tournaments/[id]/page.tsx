@@ -100,8 +100,8 @@ export default async function TournamentPage({ params }: PageProps) {
           </div>
         )}
 
-        {/* Groups summary — all other sports */}
-        {!dartsGroups && tournament.groups && tournament.groups.length > 0 && (
+        {/* Groups summary — all other sports except individual ones */}
+        {!dartsGroups && tournament.sport_name !== 'Chess' && tournament.sport_name !== 'Table Tennis' && tournament.groups && tournament.groups.length > 0 && (
           <div className="flex flex-wrap gap-6 mt-5 pt-5 border-t border-surface-border">
             {tournament.groups.map((g) => (
               <div key={g.id}>
