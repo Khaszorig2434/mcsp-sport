@@ -480,11 +480,13 @@ export default function AdminPage() {
           await api.teams.update(Number(addForm.team2_id), addForm.player2_name.trim()).catch(() => {});
       }
 
+      // For Darts, team values are composite "id:player_name" — extract just the numeric id
+      const parseTeamId = (val: string) => val ? Number(val.split(':')[0]) : null;
       const matchBody = {
         tournament_id: selected.id,
         stage:      addForm.stage,
-        team1_id:   addForm.team1_id  ? Number(addForm.team1_id)  : null,
-        team2_id:   addForm.team2_id  ? Number(addForm.team2_id)  : null,
+        team1_id:   isDarts ? parseTeamId(addForm.team1_id) : (addForm.team1_id ? Number(addForm.team1_id) : null),
+        team2_id:   isDarts ? parseTeamId(addForm.team2_id) : (addForm.team2_id ? Number(addForm.team2_id) : null),
         group_id:   addForm.group_id  ? Number(addForm.group_id)  : null,
         match_date: addForm.match_date ? addForm.match_date + ':00+08:00' : undefined,
         status:     addForm.status,
@@ -627,9 +629,10 @@ export default function AdminPage() {
                       <label className="label">Team 1</label>
                       <select className="input" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value })}>
                         <option value="">— TBD —</option>
-                        {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams).map((t) => (
-                          <option key={t.id} value={t.id}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>
-                        ))}
+                        {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams).map((t, i) => {
+                          const val = isDarts ? `${t.id}:${t.player_name ?? i}` : String(t.id);
+                          return <option key={val} value={val}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>;
+                        })}
                       </select>
                       {!isDarts && addForm.team1_id && (
                         <input className="input mt-1.5" placeholder="Player name (optional)" value={addForm.player1_name}
@@ -641,8 +644,11 @@ export default function AdminPage() {
                       <select className="input" value={addForm.team2_id} onChange={(e) => setAddForm({ ...addForm, team2_id: e.target.value })}>
                         <option value="">— TBD —</option>
                         {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams)
-                          .filter((t) => String(t.id) !== addForm.team1_id)
-                          .map((t) => <option key={t.id} value={t.id}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>)}
+                          .map((t, i) => {
+                            const val = isDarts ? `${t.id}:${t.player_name ?? i}` : String(t.id);
+                            if (val === addForm.team1_id) return null;
+                            return <option key={val} value={val}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>;
+                          })}
                       </select>
                       {!isDarts && addForm.team2_id && (
                         <input className="input mt-1.5" placeholder="Player name (optional)" value={addForm.player2_name}
