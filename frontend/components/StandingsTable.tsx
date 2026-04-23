@@ -36,7 +36,7 @@ export default function StandingsTable({ groups }: Props) {
                   const isTop2 = team.rank <= 2;
                   return (
                     <tr
-                      key={team.team_id}
+                      key={`${team.team_id}:${team.player_name ?? idx}`}
                       className={cn(
                         'border-b border-surface-border/50 last:border-0 transition-colors',
                         'hover:bg-surface-hover',

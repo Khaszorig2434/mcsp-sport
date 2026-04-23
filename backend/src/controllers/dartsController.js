@@ -419,16 +419,11 @@ async function getDartsStandings(req, res) {
       ORDER BY dg.name, t.name
     `, [tournamentId]);
 
-    const { rows: matchRows } = await db.query(`
-      SELECT group_id, team1_id, team2_id, score1, score2, winner_id
-      FROM darts_matches
-      WHERE tournament_id=$1 AND stage='group' AND status='completed'
-    `, [tournamentId]);
-
     const stats = {};
     for (const t of teamRows) {
       if (!stats[t.group_id]) stats[t.group_id] = {};
-      stats[t.group_id][t.team_id] = {
+      const key = `${t.team_id}:${t.player_name ?? ''}`;
+      stats[t.group_id][key] = {
         team_id:        t.team_id,
         team_name:      t.team_name,
         short_name:     t.short_name,
@@ -441,18 +436,27 @@ async function getDartsStandings(req, res) {
       };
     }
 
-    for (const m of matchRows) {
+    // Also fetch player names from matches to resolve same-team players
+    const { rows: matchPlayerRows } = await db.query(`
+      SELECT group_id, team1_id, team2_id, team1_player_name, team2_player_name, score1, score2, winner_id
+      FROM darts_matches
+      WHERE tournament_id=$1 AND stage='group' AND status='completed'
+    `, [tournamentId]);
+
+    for (const m of matchPlayerRows) {
       const gid = m.group_id;
       if (!gid) continue;
       const s1 = m.score1 ?? 0;
       const s2 = m.score2 ?? 0;
-      if (stats[gid]?.[m.team1_id]) {
-        const t = stats[gid][m.team1_id];
+      const key1 = `${m.team1_id}:${m.team1_player_name ?? ''}`;
+      const key2 = `${m.team2_id}:${m.team2_player_name ?? ''}`;
+      if (stats[gid]?.[key1]) {
+        const t = stats[gid][key1];
         t.matches_played++; t.score_for += s1; t.score_against += s2;
         if (m.winner_id === m.team1_id) { t.wins++; t.points += 2; } else t.losses++;
       }
-      if (stats[gid]?.[m.team2_id]) {
-        const t = stats[gid][m.team2_id];
+      if (stats[gid]?.[key2]) {
+        const t = stats[gid][key2];
         t.matches_played++; t.score_for += s2; t.score_against += s1;
         if (m.winner_id === m.team2_id) { t.wins++; t.points += 2; } else t.losses++;
       }
