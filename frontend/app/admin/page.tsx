@@ -730,7 +730,9 @@ export default function AdminPage() {
                             >
                               {editingId === m.id ? (
                                 <>
-                                  <td className="px-4 py-2 font-semibold text-foreground text-sm">{m.team1?.name ?? 'TBD'}</td>
+                                  <td className="px-4 py-2 font-semibold text-foreground text-sm">
+                                    {m.team1 ? (isDarts && m.team1.player_name ? `${m.team1.player_name} (${m.team1.name})` : m.team1.name) : 'TBD'}
+                                  </td>
                                   <td className="px-3 py-2">
                                     <input type="number" min={0} max={maxScore} className="input w-14 text-center text-sm"
                                       value={editForm.score1}
@@ -741,7 +743,9 @@ export default function AdminPage() {
                                       value={editForm.score2}
                                       onChange={(e) => setEditForm({ ...editForm, score2: clamp(e.target.value) })} />
                                   </td>
-                                  <td className="px-4 py-2 font-semibold text-foreground text-sm">{m.team2?.name ?? 'TBD'}</td>
+                                  <td className="px-4 py-2 font-semibold text-foreground text-sm">
+                                    {m.team2 ? (isDarts && m.team2.player_name ? `${m.team2.player_name} (${m.team2.name})` : m.team2.name) : 'TBD'}
+                                  </td>
                                   <td className="px-3 py-2">
                                     <select className="input text-xs py-1" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
                                       {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
