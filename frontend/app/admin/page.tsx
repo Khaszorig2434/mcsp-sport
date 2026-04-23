@@ -167,7 +167,7 @@ function DartsGroupsPanel({
   useEffect(() => { load(); }, [load]);
 
   const handleAdd = async () => {
-    if (!addForm.name.trim() || !addForm.player1_name.trim() || !addForm.player2_name.trim()) return;
+    if (!addForm.player1_name.trim() || !addForm.player2_name.trim()) return;
     setSaving(true);
     try {
       await api.darts.groups.create({
