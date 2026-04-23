@@ -480,16 +480,19 @@ export default function AdminPage() {
           await api.teams.update(Number(addForm.team2_id), addForm.player2_name.trim()).catch(() => {});
       }
 
-      // For Darts, team values are composite "id:player_name" — extract just the numeric id
-      const parseTeamId = (val: string) => val ? Number(val.split(':')[0]) : null;
+      // For Darts, team values are composite "id:player_name" — parse both parts
+      const parseTeamId     = (val: string) => val ? Number(val.split(':')[0]) : null;
+      const parsePlayerName = (val: string) => { const p = val.split(':'); return p.length > 1 ? p.slice(1).join(':') : null; };
       const matchBody = {
-        tournament_id: selected.id,
-        stage:      addForm.stage,
-        team1_id:   isDarts ? parseTeamId(addForm.team1_id) : (addForm.team1_id ? Number(addForm.team1_id) : null),
-        team2_id:   isDarts ? parseTeamId(addForm.team2_id) : (addForm.team2_id ? Number(addForm.team2_id) : null),
-        group_id:   addForm.group_id  ? Number(addForm.group_id)  : null,
-        match_date: addForm.match_date ? addForm.match_date + ':00+08:00' : undefined,
-        status:     addForm.status,
+        tournament_id:      selected.id,
+        stage:              addForm.stage,
+        team1_id:           isDarts ? parseTeamId(addForm.team1_id) : (addForm.team1_id ? Number(addForm.team1_id) : null),
+        team2_id:           isDarts ? parseTeamId(addForm.team2_id) : (addForm.team2_id ? Number(addForm.team2_id) : null),
+        team1_player_name:  isDarts ? parsePlayerName(addForm.team1_id) : undefined,
+        team2_player_name:  isDarts ? parsePlayerName(addForm.team2_id) : undefined,
+        group_id:           addForm.group_id  ? Number(addForm.group_id)  : null,
+        match_date:         addForm.match_date ? addForm.match_date + ':00+08:00' : undefined,
+        status:             addForm.status,
       };
       if (isDarts) await api.darts.matches.create(matchBody);
       else         await api.matches.create(matchBody);

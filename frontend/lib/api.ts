@@ -143,7 +143,7 @@ export const api = {
         if (!res.ok) throw new Error(`Failed to update darts match ${id}`);
         return res.json();
       },
-      async create(body: { tournament_id: number; group_id?: number | null; stage: string; team1_id?: number | null; team2_id?: number | null; match_date?: string; status?: string }) {
+      async create(body: { tournament_id: number; group_id?: number | null; stage: string; team1_id?: number | null; team2_id?: number | null; team1_player_name?: string | null; team2_player_name?: string | null; match_date?: string; status?: string }) {
         const res = await fetch(`${API_BASE}/darts/matches`, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -331,15 +331,15 @@ async function updateDartsMatch(req, res) {
 // POST /api/darts/matches — create a match
 async function createDartsMatch(req, res) {
   try {
-    const { tournament_id, group_id, stage, team1_id, team2_id, match_date, status } = req.body;
+    const { tournament_id, group_id, stage, team1_id, team2_id, match_date, status, team1_player_name, team2_player_name } = req.body;
     if (!tournament_id || !stage) {
       return res.status(400).json({ error: 'tournament_id and stage are required' });
     }
     const { rows } = await db.query(
-      `INSERT INTO darts_matches (tournament_id, group_id, stage, team1_id, team2_id, match_date, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
+      `INSERT INTO darts_matches (tournament_id, group_id, stage, team1_id, team2_id, match_date, status, team1_player_name, team2_player_name)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
       [tournament_id, group_id || null, stage, team1_id || null, team2_id || null,
-       match_date || null, status || 'upcoming']
+       match_date || null, status || 'upcoming', team1_player_name || null, team2_player_name || null]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
