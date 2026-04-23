@@ -9,8 +9,9 @@ import Bracket from '@/components/Bracket';
 import DartsBracket from '@/components/DartsBracket';
 import { cn, stageLabel } from '@/lib/utils';
 
-const PLACEMENT_SPORTS = ['Table Tennis', 'Chess'];
+const PLACEMENT_SPORTS = ['Chess'];
 const DARTS_SPORT = 'Darts';
+const TT_SPORT    = 'Table Tennis';
 
 type TabId = 'overview' | 'matches' | 'bracket';
 
@@ -36,9 +37,11 @@ export default function TournamentTabs({
 }) {
   const isIndividual = PLACEMENT_SPORTS.includes(sportName);
   const isDarts      = sportName === DARTS_SPORT;
+  const isTT         = sportName === TT_SPORT;
 
   if (isIndividual) return <IndividualSportView tournamentId={tournamentId} />;
   if (isDarts)      return <DartsSportTabs tournamentId={tournamentId} />;
+  if (isTT)         return <TTSportTabs tournamentId={tournamentId} />;
 
   return <BracketSportTabs tournamentId={tournamentId} />;
 }
@@ -275,6 +278,76 @@ function DartsMatchesTab({ matches }: { matches: Match[] }) {
           </section>
         );
       })}
+    </div>
+  );
+}
+
+/* ─── Table Tennis Sport Tabs ────────────────────────────────────────── */
+
+function TTSportTabs({ tournamentId }: { tournamentId: string }) {
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [matches,   setMatches]   = useState<Match[]>([]);
+  const [standings, setStandings] = useState<StandingsGroup[]>([]);
+  const [bracket,   setBracket]   = useState<DartsBracketType | null>(null);
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState<string | null>(null);
+
+  const fetchData = useCallback(async (tab: TabId) => {
+    setLoading(true); setError(null);
+    try {
+      if (tab === 'overview' || tab === 'matches') {
+        const data = await api.tt.matches.list({ tournamentId });
+        setMatches(data);
+      }
+      if (tab === 'overview') {
+        const data = await api.tt.standings.get(tournamentId);
+        setStandings(data);
+      }
+      if (tab === 'bracket') {
+        const data = await api.tt.bracket.get(tournamentId);
+        setBracket(data);
+      }
+    } catch {
+      setError('Failed to load data. Is the backend running?');
+    } finally {
+      setLoading(false);
+    }
+  }, [tournamentId]);
+
+  useEffect(() => { fetchData(activeTab); }, [activeTab, fetchData]);
+
+  return (
+    <div>
+      <div className="flex border-b border-surface-border mb-6 overflow-x-auto">
+        {TABS.map((tab) => (
+          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+            className={cn('px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors',
+              activeTab === tab.id ? 'border-b-2 border-brand text-foreground -mb-px' : 'text-muted hover:text-foreground border-b-2 border-transparent',
+            )}>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {loading && <div className="space-y-3">{[1,2,3].map((i) => <div key={i} className="h-20 rounded-lg bg-surface-card animate-pulse" />)}</div>}
+      {error && !loading && <div className="rounded-lg bg-loss/10 border border-loss/30 text-loss text-sm px-4 py-3">{error}</div>}
+      {activeTab === 'overview' && !loading && !error && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
+            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">Recent & Live Matches</h3>
+            {matches.length === 0
+              ? <p className="text-gray-500 text-sm">No matches yet.</p>
+              : <div className="space-y-3">{matches.filter((m) => m.status !== 'upcoming').slice(0, 4).map((m) => <MatchCard key={m.id} match={m} />)}</div>}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">Group Standings</h3>
+            <StandingsTable groups={standings} />
+          </div>
+        </div>
+      )}
+      {activeTab === 'matches'  && !loading && !error && <DartsMatchesTab matches={matches} />}
+      {activeTab === 'bracket'  && !loading && !error && (
+        bracket ? <DartsBracket bracket={bracket} /> : <p className="text-muted text-sm">Bracket not available yet.</p>
+      )}
     </div>
   );
 }

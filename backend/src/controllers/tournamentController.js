@@ -93,7 +93,8 @@ async function getTournament(req, res) {
         tm.name AS team_name,
         tm.short_name,
         tm.country,
-        tm.logo_url
+        tm.logo_url,
+        gt.player_name
       FROM groups g
       JOIN group_teams gt ON gt.group_id = g.id
       JOIN teams       tm ON tm.id = gt.team_id
@@ -109,11 +110,12 @@ async function getTournament(req, res) {
         groupsMap[row.group_id] = { id: row.group_id, name: row.group_name, teams: [] };
       }
       groupsMap[row.group_id].teams.push({
-        id:         row.team_id,
-        name:       row.team_name,
-        short_name: row.short_name,
-        country:    row.country,
-        logo_url:   row.logo_url,
+        id:          row.team_id,
+        name:        row.team_name,
+        short_name:  row.short_name,
+        country:     row.country,
+        logo_url:    row.logo_url,
+        player_name: row.player_name ?? null,
       });
     }
 

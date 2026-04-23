@@ -12,6 +12,7 @@ async function listMatches(req, res) {
         g.name     AS group_name,
         m.stage, m.status, m.match_date,
         m.score1, m.score2, m.winner_id, m.loser_id,
+        m.team1_player_name, m.team2_player_name,
         t1.id      AS team1_id, t1.name AS team1_name, t1.short_name AS team1_short, t1.logo_url AS team1_logo, t1.player_name AS team1_player,
         t2.id      AS team2_id, t2.name AS team2_name, t2.short_name AS team2_short, t2.logo_url AS team2_logo, t2.player_name AS team2_player
       FROM matches m
@@ -65,6 +66,21 @@ async function getLiveMatches(req, res) {
       JOIN  tournaments tn ON tn.id = dm.tournament_id
       JOIN  sports      s  ON s.id  = tn.sport_id
       WHERE dm.status = 'live'
+
+      UNION ALL
+
+      SELECT
+        ttm.id, ttm.tournament_id, ttm.stage, ttm.status, ttm.match_date,
+        ttm.score1, ttm.score2, ttm.winner_id,
+        t1.id AS team1_id, t1.name AS team1_name, t1.short_name AS team1_short,
+        t2.id AS team2_id, t2.name AS team2_name, t2.short_name AS team2_short,
+        tn.name AS tournament_name, s.name AS sport_name, s.icon AS sport_icon
+      FROM tt_matches ttm
+      LEFT JOIN teams      t1 ON t1.id = ttm.team1_id
+      LEFT JOIN teams      t2 ON t2.id = ttm.team2_id
+      JOIN  tournaments tn ON tn.id = ttm.tournament_id
+      JOIN  sports      s  ON s.id  = tn.sport_id
+      WHERE ttm.status = 'live'
 
       ORDER BY match_date ASC
     `;
@@ -172,14 +188,14 @@ async function updateMatch(req, res) {
 // POST /api/matches — create a new match
 async function createMatch(req, res) {
   try {
-    const { tournament_id, group_id, stage, team1_id, team2_id, match_date, status } = req.body;
+    const { tournament_id, group_id, stage, team1_id, team2_id, match_date, status, team1_player_name, team2_player_name } = req.body;
     if (!tournament_id || !stage) {
       return res.status(400).json({ error: 'tournament_id and stage are required' });
     }
     const { rows } = await db.query(
-      `INSERT INTO matches (tournament_id, group_id, stage, team1_id, team2_id, match_date, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-      [tournament_id, group_id || null, stage, team1_id || null, team2_id || null, match_date || null, status || 'upcoming']
+      `INSERT INTO matches (tournament_id, group_id, stage, team1_id, team2_id, match_date, status, team1_player_name, team2_player_name)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+      [tournament_id, group_id || null, stage, team1_id || null, team2_id || null, match_date || null, status || 'upcoming', team1_player_name || null, team2_player_name || null]
     );
     res.status(201).json(rows[0]);
   } catch (err) {
@@ -217,8 +233,8 @@ function formatMatch(row) {
     loser_id:        row.loser_id,
     sport_name:      row.sport_name,
     sport_icon:      row.sport_icon,
-    team1: row.team1_id ? { id: row.team1_id, name: row.team1_name, short_name: row.team1_short, logo_url: row.team1_logo, player_name: row.team1_player ?? null } : null,
-    team2: row.team2_id ? { id: row.team2_id, name: row.team2_name, short_name: row.team2_short, logo_url: row.team2_logo, player_name: row.team2_player ?? null } : null,
+    team1: row.team1_id ? { id: row.team1_id, name: row.team1_name, short_name: row.team1_short, logo_url: row.team1_logo, player_name: row.team1_player_name ?? row.team1_player ?? null } : null,
+    team2: row.team2_id ? { id: row.team2_id, name: row.team2_name, short_name: row.team2_short, logo_url: row.team2_logo, player_name: row.team2_player_name ?? row.team2_player ?? null } : null,
   };
 }
 

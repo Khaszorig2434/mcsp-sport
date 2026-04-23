@@ -46,6 +46,24 @@ async function getSchedule(req, res) {
       WHERE dm.status = 'upcoming'
         AND dm.match_date IS NOT NULL
 
+      UNION ALL
+
+      SELECT
+        ttm.id, ttm.tournament_id, ttm.stage, ttm.status, ttm.match_date,
+        ttm.score1, ttm.score2, ttm.winner_id, ttm.loser_id,
+        t1.id AS team1_id, t1.name AS team1_name, t1.short_name AS team1_short, t1.logo_url AS team1_logo,
+        ttm.team1_player_name AS team1_player,
+        t2.id AS team2_id, t2.name AS team2_name, t2.short_name AS team2_short, t2.logo_url AS team2_logo,
+        ttm.team2_player_name AS team2_player,
+        tn.name AS tournament_name, s.name AS sport_name, s.icon AS sport_icon
+      FROM tt_matches ttm
+      LEFT JOIN teams      t1 ON t1.id = ttm.team1_id
+      LEFT JOIN teams      t2 ON t2.id = ttm.team2_id
+      JOIN  tournaments tn ON tn.id = ttm.tournament_id
+      JOIN  sports       s ON s.id  = tn.sport_id
+      WHERE ttm.status = 'upcoming'
+        AND ttm.match_date IS NOT NULL
+
       ORDER BY match_date ASC, id ASC
     `);
 

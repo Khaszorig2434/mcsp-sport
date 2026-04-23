@@ -5,6 +5,7 @@ import { formatDate, genderLabel } from '@/lib/utils';
 import { Calendar, MapPin } from 'lucide-react';
 import SportIcon from '@/components/SportIcon';
 import type { DartsGroup } from '@/lib/types';
+type TTGroup = DartsGroup;
 
 export const dynamic = 'force-dynamic';
 
@@ -20,10 +21,14 @@ export default async function TournamentPage({ params }: PageProps) {
     notFound();
   }
 
-  // For darts, load groups from the darts-specific table
   let dartsGroups: DartsGroup[] | null = null;
   if (tournament.sport_name === 'Darts') {
     dartsGroups = await api.darts.groups.list(params.id).catch(() => []);
+  }
+
+  let ttGroups: TTGroup[] | null = null;
+  if (tournament.sport_name === 'Table Tennis') {
+    ttGroups = await api.tt.groups.list(params.id).catch(() => []);
   }
 
   const statusStyles: Record<string, string> = {
@@ -102,8 +107,29 @@ export default async function TournamentPage({ params }: PageProps) {
           </div>
         )}
 
+        {/* Groups summary — Table Tennis */}
+        {ttGroups && ttGroups.length > 0 && (
+          <div className="flex flex-wrap gap-6 mt-5 pt-5 border-t border-surface-border">
+            {ttGroups.map((g) => (
+              <div key={g.id}>
+                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1.5">Group {g.name}</p>
+                <div className="flex flex-col gap-1">
+                  {g.teams.map((t) => (
+                    <div key={`${t.id}:${t.player_name}`} className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-surface-border" />
+                      <span className="text-sm text-gray-300">
+                        {t.player_name ? `${t.player_name} ` : ''}<span className="text-gray-500 text-xs">({t.name})</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Groups summary — all other sports except individual ones */}
-        {!dartsGroups && tournament.sport_name !== 'Chess' && tournament.sport_name !== 'Table Tennis' && tournament.groups && tournament.groups.length > 0 && (
+        {!dartsGroups && !ttGroups && tournament.sport_name !== 'Chess' && tournament.groups && tournament.groups.length > 0 && (
           <div className="flex flex-wrap gap-6 mt-5 pt-5 border-t border-surface-border">
             {tournament.groups.map((g) => (
               <div key={g.id}>

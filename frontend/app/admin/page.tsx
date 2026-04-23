@@ -12,7 +12,7 @@ const STATUSES      = ['upcoming', 'live', 'completed'] as const;
 const ADMIN_PIN     = '1234';
 
 // Sports that skip bracket and use direct placement entry
-const PLACEMENT_SPORTS = ['Table Tennis', 'Chess'];
+const PLACEMENT_SPORTS = ['Chess'];
 const DARTS_SPORT      = 'Darts';
 
 interface EditState { score1: string; score2: string; status: string }
@@ -141,11 +141,160 @@ function PlacementPanel({
   );
 }
 
+/* ── Shared helpers for group panels ── */
+
+interface GroupPlayer { name: string; team_id: string }
+const emptyPlayer     = (): GroupPlayer => ({ name: '', team_id: '' });
+const emptyDartsGroup = ()              => [emptyPlayer(), emptyPlayer()];
+
+/* ── TT Groups Panel ── */
+
+function TTGroupsPanel({
+  tournament,
+  onMsg,
+  onGroupsChanged,
+}: {
+  tournament: Tournament;
+  onMsg: (text: string, ok?: boolean) => void;
+  onGroupsChanged: () => void;
+}) {
+  const [groups,   setGroups]   = useState<DartsGroup[]>([]);
+  const [allTeams, setAllTeams] = useState<{ id: number; name: string }[]>([]);
+  const [showAdd,  setShowAdd]  = useState(false);
+  const [players,  setPlayers]  = useState<GroupPlayer[]>(emptyDartsGroup());
+  const [saving,   setSaving]   = useState(false);
+
+  const load = useCallback(() => {
+    api.tt.groups.list(tournament.id).then(setGroups).catch(() => {});
+  }, [tournament.id]);
+
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    api.teams.list().then((rows) => {
+      const seen = new Set<string>();
+      setAllTeams(rows.filter((t) => { if (seen.has(t.name)) return false; seen.add(t.name); return true; }));
+    }).catch(() => {});
+  }, []);
+
+  const updatePlayer = (i: number, field: keyof GroupPlayer, val: string) =>
+    setPlayers((prev) => prev.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
+
+  const handleAdd = async () => {
+    if (players.some((p) => !p.name.trim() || !p.team_id)) return;
+    setSaving(true);
+    try {
+      await api.tt.groups.create({
+        tournament_id: tournament.id,
+        players: players.map((p) => ({ name: p.name.trim(), team_id: Number(p.team_id) })),
+      });
+      onMsg('Group created');
+      setShowAdd(false);
+      setPlayers(emptyDartsGroup());
+      load();
+      onGroupsChanged();
+    } catch (err: unknown) {
+      onMsg(err instanceof Error ? err.message : 'Failed to create group', false);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (groupId: number) => {
+    if (!confirm('Delete this group and its matches?')) return;
+    try {
+      await api.tt.groups.delete(groupId);
+      onMsg('Group deleted');
+      load();
+      onGroupsChanged();
+    } catch { onMsg('Failed to delete group', false); }
+  };
+
+  const canSubmit = players.length >= 2 && players.every((p) => p.name.trim() && p.team_id);
+  const addPlayer    = () => { if (players.length < 6) setPlayers((prev) => [...prev, emptyPlayer()]); };
+  const removePlayer = (i: number) => { if (players.length > 2) setPlayers((prev) => prev.filter((_, idx) => idx !== i)); };
+
+  return (
+    <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-bold text-brand uppercase tracking-widest">TT Groups</span>
+        <div className="flex-1 h-px bg-surface-border" />
+        <button
+          onClick={() => { setShowAdd(!showAdd); setPlayers(emptyDartsGroup()); }}
+          className={cn(
+            'flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors',
+            showAdd ? 'bg-surface-hover text-muted' : 'bg-brand text-white hover:bg-brand-dark',
+          )}
+        >
+          {showAdd ? <X size={12} /> : <Plus size={12} />}
+          {showAdd ? 'Cancel' : 'Add Group'}
+        </button>
+      </div>
+
+      {groups.length === 0 && !showAdd && (
+        <p className="text-xs text-muted">No groups yet — add one to generate group matches.</p>
+      )}
+      <div className="space-y-2">
+        {groups.map((g) => (
+          <div key={g.id} className="flex items-start justify-between bg-surface rounded-xl px-4 py-2.5 border border-surface-border">
+            <div>
+              <span className="text-xs font-bold text-foreground mr-2">Group {g.name}</span>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                {g.teams.map((t) => (
+                  <span key={`${t.id}:${t.player_name}`} className="text-xs text-muted">
+                    {t.player_name ? `${t.player_name} (${t.name})` : t.name}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <button onClick={() => handleDelete(g.id)} className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors shrink-0" title="Delete group">
+              <Trash2 size={13} />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {showAdd && (
+        <div className="space-y-2 pt-1">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] text-muted uppercase tracking-widest font-bold">{players.length} Players</p>
+            {players.length < 6 && (
+              <button onClick={addPlayer} className="flex items-center gap-1 text-xs text-brand hover:text-brand-dark font-semibold">
+                <Plus size={11} /> Add Player
+              </button>
+            )}
+          </div>
+          {players.map((p, i) => (
+            <div key={i} className="grid grid-cols-2 gap-2">
+              <input className="input" placeholder={`Player ${i + 1} name`} value={p.name} onChange={(e) => updatePlayer(i, 'name', e.target.value)} />
+              <div className="flex gap-1.5">
+                <select className="input flex-1" value={p.team_id} onChange={(e) => updatePlayer(i, 'team_id', e.target.value)}>
+                  <option value="">— Team —</option>
+                  {allTeams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+                {players.length > 2 && (
+                  <button onClick={() => removePlayer(i)} className="p-2 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors shrink-0">
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={handleAdd}
+            disabled={saving || !canSubmit}
+            className="mt-2 bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
+          >
+            {saving ? 'Creating…' : 'Create Group'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Darts Groups Panel ── */
 
-interface DartsPlayer { name: string; team_id: string }
-const emptyPlayer = (): DartsPlayer => ({ name: '', team_id: '' });
-const emptyDartsGroup = () => [emptyPlayer(), emptyPlayer()];
+type DartsPlayer = GroupPlayer;
 
 function DartsGroupsPanel({
   tournament,
@@ -365,7 +514,10 @@ export default function AdminPage() {
   const [saving,     setSaving]     = useState(false);
   const [msg,        setMsg]        = useState<{ text: string; ok: boolean } | null>(null);
   const [dartsGroups,setDartsGroups]= useState<DartsGroup[]>([]);
-  const isDarts = selected?.sport_name === DARTS_SPORT;
+  const [ttGroups,   setTTGroups]   = useState<DartsGroup[]>([]);
+  const isDarts       = selected?.sport_name === DARTS_SPORT;
+  const isTT          = selected?.sport_name === 'Table Tennis';
+  const isGroupSport  = isDarts || isTT;
 
   /* persist unlock for the browser session */
   useEffect(() => {
@@ -388,6 +540,16 @@ export default function AdminPage() {
         ]);
         setMatches(data);
         setDartsGroups(dGroups);
+        setTTGroups([]);
+        setGroups([]);
+      } else if (t.sport_name === 'Table Tennis') {
+        const [data, tGroups] = await Promise.all([
+          api.tt.matches.list({ tournamentId: t.id }),
+          api.tt.groups.list(t.id),
+        ]);
+        setMatches(data);
+        setTTGroups(tGroups);
+        setDartsGroups([]);
         setGroups([]);
       } else {
         const [data, detail] = await Promise.all([
@@ -396,11 +558,13 @@ export default function AdminPage() {
         ]);
         setMatches(data);
         setGroups(detail.groups ?? []);
+        setDartsGroups([]);
+        setTTGroups([]);
       }
     } finally { setLoading(false); }
   }, []);
 
-  const selectTournament = (t: Tournament) => { setSelected(t); setDartsGroups([]); loadMatches(t); };
+  const selectTournament = (t: Tournament) => { setSelected(t); setDartsGroups([]); setTTGroups([]); loadMatches(t); };
 
   const flash = (text: string, ok = true) => {
     setMsg({ text, ok });
@@ -410,10 +574,16 @@ export default function AdminPage() {
   /* ── helpers ── */
   const allTeams: Team[] = isDarts
     ? dartsGroups.flatMap((g) => g.teams as Team[])
-    : groups.flatMap((g) => g.teams ?? []);
+    : isTT
+      ? ttGroups.flatMap((g) => g.teams as Team[])
+      : groups.flatMap((g) => g.teams ?? []);
   const teamsForGroup = (groupId: string) => {
     if (isDarts) {
       const g = dartsGroups.find((g) => String(g.id) === groupId);
+      return (g?.teams ?? allTeams) as Team[];
+    }
+    if (isTT) {
+      const g = ttGroups.find((g) => String(g.id) === groupId);
       return (g?.teams ?? allTeams) as Team[];
     }
     const g = groups.find((g) => String(g.id) === groupId);
@@ -447,8 +617,9 @@ export default function AdminPage() {
         score2: editForm.score2 !== '' ? Number(editForm.score2) : undefined,
         status: editForm.status,
       };
-      if (isDarts) await api.darts.matches.update(m.id, body);
-      else         await api.matches.update(m.id, body);
+      if (isDarts)   await api.darts.matches.update(m.id, body);
+      else if (isTT) await api.tt.matches.update(m.id, body);
+      else           await api.matches.update(m.id, body);
       flash('Match updated');
       setEditingId(null);
       loadMatches(selected!);
@@ -460,8 +631,9 @@ export default function AdminPage() {
   const deleteMatch = async (id: number) => {
     if (!confirm('Delete this match?')) return;
     try {
-      if (isDarts) await api.darts.matches.delete(id);
-      else         await api.matches.delete(id);
+      if (isDarts)   await api.darts.matches.delete(id);
+      else if (isTT) await api.tt.matches.delete(id);
+      else           await api.matches.delete(id);
       flash('Match deleted');
       loadMatches(selected!);
     } catch { flash('Failed to delete', false); }
@@ -472,8 +644,8 @@ export default function AdminPage() {
     if (!selected) return;
     setSaving(true);
     try {
-      // Save player names to teams only for individual sports (not team sports like Basketball)
-      if (!isDarts && PLACEMENT_SPORTS.includes(selected.sport_name)) {
+      // Save player names to teams only for Chess (manual placement sports)
+      if (PLACEMENT_SPORTS.includes(selected.sport_name)) {
         if (addForm.team1_id && addForm.player1_name.trim())
           await api.teams.update(Number(addForm.team1_id), addForm.player1_name.trim()).catch(() => {});
         if (addForm.team2_id && addForm.player2_name.trim())
@@ -486,16 +658,17 @@ export default function AdminPage() {
       const matchBody = {
         tournament_id:      selected.id,
         stage:              addForm.stage,
-        team1_id:           isDarts ? parseTeamId(addForm.team1_id) : (addForm.team1_id ? Number(addForm.team1_id) : null),
-        team2_id:           isDarts ? parseTeamId(addForm.team2_id) : (addForm.team2_id ? Number(addForm.team2_id) : null),
-        team1_player_name:  isDarts ? parsePlayerName(addForm.team1_id) : undefined,
-        team2_player_name:  isDarts ? parsePlayerName(addForm.team2_id) : undefined,
+        team1_id:           isGroupSport ? parseTeamId(addForm.team1_id) : (addForm.team1_id ? Number(addForm.team1_id) : null),
+        team2_id:           isGroupSport ? parseTeamId(addForm.team2_id) : (addForm.team2_id ? Number(addForm.team2_id) : null),
+        team1_player_name:  isGroupSport ? parsePlayerName(addForm.team1_id) : undefined,
+        team2_player_name:  isGroupSport ? parsePlayerName(addForm.team2_id) : undefined,
         group_id:           addForm.group_id  ? Number(addForm.group_id)  : null,
         match_date:         addForm.match_date ? addForm.match_date + ':00+08:00' : undefined,
         status:             addForm.status,
       };
-      if (isDarts) await api.darts.matches.create(matchBody);
-      else         await api.matches.create(matchBody);
+      if (isDarts)   await api.darts.matches.create(matchBody);
+      else if (isTT) await api.tt.matches.create(matchBody);
+      else           await api.matches.create(matchBody);
       flash('Match created');
       setShowAdd(false);
       setAddForm(emptyAdd);
@@ -504,7 +677,7 @@ export default function AdminPage() {
     finally  { setSaving(false); }
   };
 
-  const activeStages = isDarts ? DARTS_STAGES : STAGES;
+  const activeStages = (isDarts || isTT) ? DARTS_STAGES : STAGES;
   const byStage = activeStages
     .map((s) => ({ stage: s, matches: matches.filter((m) => m.stage === s) }))
     .filter((g) => g.matches.length > 0);
@@ -616,14 +789,16 @@ export default function AdminPage() {
                         {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
-                    {addForm.stage === 'group' && (isDarts ? dartsGroups.length > 0 : groups.length > 0) && (
+                    {addForm.stage === 'group' && (isDarts ? dartsGroups.length > 0 : isTT ? ttGroups.length > 0 : groups.length > 0) && (
                       <div>
                         <label className="label">Group</label>
                         <select className="input" value={addForm.group_id} onChange={(e) => setAddForm({ ...addForm, group_id: e.target.value, team1_id: '', team2_id: '' })}>
                           <option value="">— select —</option>
                           {isDarts
                             ? dartsGroups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)
-                            : groups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)
+                            : isTT
+                              ? ttGroups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)
+                              : groups.map((g) => <option key={g.id} value={g.id}>Group {g.name}</option>)
                           }
                         </select>
                       </div>
@@ -633,14 +808,10 @@ export default function AdminPage() {
                       <select className="input" value={addForm.team1_id} onChange={(e) => setAddForm({ ...addForm, team1_id: e.target.value })}>
                         <option value="">— TBD —</option>
                         {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams).map((t, i) => {
-                          const val = isDarts ? `${t.id}:${t.player_name ?? i}` : String(t.id);
+                          const val = isGroupSport ? `${t.id}:${t.player_name ?? i}` : String(t.id);
                           return <option key={val} value={val}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>;
                         })}
                       </select>
-                      {!isDarts && addForm.team1_id && (
-                        <input className="input mt-1.5" placeholder="Player name (optional)" value={addForm.player1_name}
-                          onChange={(e) => setAddForm({ ...addForm, player1_name: e.target.value })} />
-                      )}
                     </div>
                     <div>
                       <label className="label">Team 2</label>
@@ -648,15 +819,11 @@ export default function AdminPage() {
                         <option value="">— TBD —</option>
                         {(addForm.stage === 'group' && addForm.group_id ? teamsForGroup(addForm.group_id) : allTeams)
                           .map((t, i) => {
-                            const val = isDarts ? `${t.id}:${t.player_name ?? i}` : String(t.id);
+                            const val = isGroupSport ? `${t.id}:${t.player_name ?? i}` : String(t.id);
                             if (val === addForm.team1_id) return null;
                             return <option key={val} value={val}>{t.player_name ? `${t.player_name} (${t.name})` : t.name}</option>;
                           })}
                       </select>
-                      {!isDarts && addForm.team2_id && (
-                        <input className="input mt-1.5" placeholder="Player name (optional)" value={addForm.player2_name}
-                          onChange={(e) => setAddForm({ ...addForm, player2_name: e.target.value })} />
-                      )}
                     </div>
                     <div>
                       <label className="label">Match Date</label>
@@ -679,6 +846,16 @@ export default function AdminPage() {
                   onSaved={() => flash('Placements saved')}
                   onError={() => flash('Failed to save placements', false)}
                   onCleared={() => flash('Data cleared')}
+                />
+              )}
+
+              {/* Groups panel for Table Tennis */}
+              {isTT && (
+                <TTGroupsPanel
+                  key={selected.id}
+                  tournament={selected}
+                  onMsg={(text: string, ok = true) => flash(text, ok)}
+                  onGroupsChanged={() => loadMatches(selected)}
                 />
               )}
 
@@ -731,7 +908,7 @@ export default function AdminPage() {
                               {editingId === m.id ? (
                                 <>
                                   <td className="px-4 py-2 font-semibold text-foreground text-sm">
-                                    {m.team1 ? (isDarts && m.team1.player_name ? `${m.team1.player_name} (${m.team1.name})` : m.team1.name) : 'TBD'}
+                                    {m.team1 ? (isGroupSport && m.team1.player_name ? `${m.team1.player_name} (${m.team1.name})` : m.team1.name) : 'TBD'}
                                   </td>
                                   <td className="px-3 py-2">
                                     <input type="number" min={0} max={maxScore} className="input w-14 text-center text-sm"
@@ -744,7 +921,7 @@ export default function AdminPage() {
                                       onChange={(e) => setEditForm({ ...editForm, score2: clamp(e.target.value) })} />
                                   </td>
                                   <td className="px-4 py-2 font-semibold text-foreground text-sm">
-                                    {m.team2 ? (isDarts && m.team2.player_name ? `${m.team2.player_name} (${m.team2.name})` : m.team2.name) : 'TBD'}
+                                    {m.team2 ? (isGroupSport && m.team2.player_name ? `${m.team2.player_name} (${m.team2.name})` : m.team2.name) : 'TBD'}
                                   </td>
                                   <td className="px-3 py-2">
                                     <select className="input text-xs py-1" value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}>
@@ -769,7 +946,7 @@ export default function AdminPage() {
                                   <td className="px-4 py-3">
                                     <span className={cn('font-semibold text-sm', m.winner_id === m.team1?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team1?.id ? 'text-muted line-through' : 'text-foreground')}>
                                       {m.team1
-                                        ? (isDarts && m.team1.player_name ? `${m.team1.player_name} (${m.team1.name})` : m.team1.name)
+                                        ? (isGroupSport && m.team1.player_name ? `${m.team1.player_name} (${m.team1.name})` : m.team1.name)
                                         : <span className="text-muted italic font-normal">TBD</span>}
                                     </span>
                                   </td>
@@ -778,7 +955,7 @@ export default function AdminPage() {
                                   <td className="px-4 py-3">
                                     <span className={cn('font-semibold text-sm', m.winner_id === m.team2?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team2?.id ? 'text-muted line-through' : 'text-foreground')}>
                                       {m.team2
-                                        ? (isDarts && m.team2.player_name ? `${m.team2.player_name} (${m.team2.name})` : m.team2.name)
+                                        ? (isGroupSport && m.team2.player_name ? `${m.team2.player_name} (${m.team2.name})` : m.team2.name)
                                         : <span className="text-muted italic font-normal">TBD</span>}
                                     </span>
                                   </td>

@@ -172,6 +172,70 @@ export const api = {
     },
   },
 
+  tt: {
+    groups: {
+      list(tournamentId: number | string) {
+        return get<{ id: number; name: string; teams: { id: number; name: string; short_name: string | null; player_name: string | null }[] }[]>(
+          `/tt/groups?tournamentId=${tournamentId}`
+        );
+      },
+      async create(body: { tournament_id: number; players: { team_id: number; name: string }[] }) {
+        const res = await fetch(`${API_BASE}/tt/groups`, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error ?? 'Failed to create TT group');
+        }
+        return res.json();
+      },
+      async delete(id: number | string) {
+        const res = await fetch(`${API_BASE}/tt/groups/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete TT group');
+        return res.json();
+      },
+    },
+    matches: {
+      list(params: { tournamentId: number | string; stage?: string; status?: string }) {
+        const qs = '?' + new URLSearchParams(
+          Object.entries(params).filter(([, v]) => v !== undefined) as [string, string][]
+        ).toString();
+        return get<Match[]>(`/tt/matches${qs}`);
+      },
+      async update(id: number | string, body: { score1?: number; score2?: number; status?: string }) {
+        const res = await fetch(`${API_BASE}/tt/matches/${id}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(`Failed to update TT match ${id}`);
+        return res.json();
+      },
+      async create(body: { tournament_id: number; group_id?: number | null; stage: string; team1_id?: number | null; team2_id?: number | null; team1_player_name?: string | null; team2_player_name?: string | null; match_date?: string; status?: string }) {
+        const res = await fetch(`${API_BASE}/tt/matches`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error('Failed to create TT match');
+        return res.json();
+      },
+      async delete(id: number | string) {
+        const res = await fetch(`${API_BASE}/tt/matches/${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error(`Failed to delete TT match ${id}`);
+        return res.json();
+      },
+    },
+    bracket: {
+      get(tournamentId: number | string) {
+        return get<DartsBracket>(`/tt/bracket?tournamentId=${tournamentId}`);
+      },
+    },
+    standings: {
+      get(tournamentId: number | string) {
+        return get<StandingsGroup[]>(`/tt/standings?tournamentId=${tournamentId}`);
+      },
+    },
+  },
+
   teams: {
     list(params?: { sportId?: number }) {
       const qs = params?.sportId ? `?sportId=${params.sportId}` : '';
