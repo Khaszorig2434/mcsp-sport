@@ -761,21 +761,19 @@ export default function AdminPage() {
                                 <>
                                   <td className="px-4 py-3">
                                     <span className={cn('font-semibold text-sm', m.winner_id === m.team1?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team1?.id ? 'text-muted line-through' : 'text-foreground')}>
-                                      {m.team1?.name ?? <span className="text-muted italic font-normal">TBD</span>}
+                                      {m.team1
+                                        ? (isDarts && m.team1.player_name ? `${m.team1.player_name} (${m.team1.name})` : m.team1.name)
+                                        : <span className="text-muted italic font-normal">TBD</span>}
                                     </span>
-                                    {isDarts && m.team1?.player_name && (
-                                      <p className="text-[10px] text-muted mt-0.5">{m.team1.player_name}</p>
-                                    )}
                                   </td>
                                   <td className="px-3 py-3 text-center font-bold tabular-nums text-foreground">{m.score1 ?? '—'}</td>
                                   <td className="px-3 py-3 text-center font-bold tabular-nums text-foreground">{m.score2 ?? '—'}</td>
                                   <td className="px-4 py-3">
                                     <span className={cn('font-semibold text-sm', m.winner_id === m.team2?.id ? 'text-win' : m.winner_id && m.winner_id !== m.team2?.id ? 'text-muted line-through' : 'text-foreground')}>
-                                      {m.team2?.name ?? <span className="text-muted italic font-normal">TBD</span>}
+                                      {m.team2
+                                        ? (isDarts && m.team2.player_name ? `${m.team2.player_name} (${m.team2.name})` : m.team2.name)
+                                        : <span className="text-muted italic font-normal">TBD</span>}
                                     </span>
-                                    {isDarts && m.team2?.player_name && (
-                                      <p className="text-[10px] text-muted mt-0.5">{m.team2.player_name}</p>
-                                    )}
                                   </td>
                                   <td className="px-3 py-3">
                                     <span className={cn('text-[10px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wide',
