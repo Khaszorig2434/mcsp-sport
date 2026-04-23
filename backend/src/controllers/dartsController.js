@@ -69,12 +69,12 @@ async function getDartsGroups(req, res) {
 
     const { rows } = await db.query(`
       SELECT
-        dg.id   AS group_id,
-        dg.name AS group_name,
-        t.id    AS team_id,
-        t.name  AS team_name,
+        dg.id        AS group_id,
+        dg.name      AS group_name,
+        t.id         AS team_id,
+        t.name       AS team_name,
         t.short_name,
-        t.player_name
+        dgt.player_name
       FROM darts_groups dg
       JOIN darts_group_teams dgt ON dgt.group_id = dg.id
       JOIN teams             t   ON t.id = dgt.team_id
@@ -103,39 +103,23 @@ async function getDartsGroups(req, res) {
 }
 
 // POST /api/darts/groups
-// Body: { tournament_id, player1_name, player2_name }
+// Body: { tournament_id, player1_name, player1_team_id, player2_name, player2_team_id }
 // Group name is auto-assigned as the next letter (A, B, C…).
 async function createDartsGroup(req, res) {
   try {
-    const { tournament_id, player1_name, player2_name } = req.body;
-    if (!tournament_id || !player1_name?.trim() || !player2_name?.trim()) {
-      return res.status(400).json({ error: 'tournament_id, player1_name and player2_name are required' });
+    const { tournament_id, player1_name, player1_team_id, player2_name, player2_team_id } = req.body;
+    if (!tournament_id || !player1_name?.trim() || !player2_name?.trim() || !player1_team_id || !player2_team_id) {
+      return res.status(400).json({ error: 'tournament_id, player names and team IDs are required' });
     }
-    if (player1_name.trim().toLowerCase() === player2_name.trim().toLowerCase()) {
-      return res.status(400).json({ error: 'Players must have different names' });
+    if (player1_team_id === player2_team_id) {
+      return res.status(400).json({ error: 'Players must be from different teams' });
     }
 
     // Auto-assign the next group letter (A, B, C…)
     const { rows: [{ count }] } = await db.query(
       `SELECT COUNT(*) AS count FROM darts_groups WHERE tournament_id = $1`, [tournament_id]
     );
-    const name = String.fromCharCode(65 + parseInt(count, 10)); // 0→A, 1→B, …
-
-    // Get the sport_id so we tag the new team rows correctly
-    const { rows: [tournament] } = await db.query(
-      `SELECT sport_id FROM tournaments WHERE id = $1`, [tournament_id]
-    );
-    if (!tournament) return res.status(404).json({ error: 'Tournament not found' });
-
-    // Create a team record for each player
-    const { rows: [team1] } = await db.query(
-      `INSERT INTO teams (name, sport_id) VALUES ($1, $2) RETURNING id`,
-      [player1_name.trim(), tournament.sport_id]
-    );
-    const { rows: [team2] } = await db.query(
-      `INSERT INTO teams (name, sport_id) VALUES ($1, $2) RETURNING id`,
-      [player2_name.trim(), tournament.sport_id]
-    );
+    const name = String.fromCharCode(65 + parseInt(count, 10));
 
     const { rows: [group] } = await db.query(
       `INSERT INTO darts_groups (tournament_id, name) VALUES ($1, $2) RETURNING id`,
@@ -143,15 +127,15 @@ async function createDartsGroup(req, res) {
     );
 
     await db.query(
-      `INSERT INTO darts_group_teams (group_id, team_id) VALUES ($1, $2), ($1, $3)`,
-      [group.id, team1.id, team2.id]
+      `INSERT INTO darts_group_teams (group_id, team_id, player_name) VALUES ($1, $2, $3), ($1, $4, $5)`,
+      [group.id, player1_team_id, player1_name.trim(), player2_team_id, player2_name.trim()]
     );
 
-    // Auto-create the one match for this group
+    // Auto-create the group match using the actual team IDs
     await db.query(
       `INSERT INTO darts_matches (tournament_id, group_id, stage, team1_id, team2_id, status)
        VALUES ($1, $2, 'group', $3, $4, 'upcoming')`,
-      [tournament_id, group.id, team1.id, team2.id]
+      [tournament_id, group.id, player1_team_id, player2_team_id]
     );
 
     res.status(201).json({ id: group.id, name });
@@ -422,7 +406,7 @@ async function getDartsStandings(req, res) {
       SELECT
         dg.id   AS group_id, dg.name AS group_name,
         t.id    AS team_id,  t.name  AS team_name,
-        t.short_name, t.logo_url, t.player_name
+        t.short_name, t.logo_url, dgt.player_name
       FROM darts_groups dg
       JOIN darts_group_teams dgt ON dgt.group_id = dg.id
       JOIN teams             t   ON t.id = dgt.team_id

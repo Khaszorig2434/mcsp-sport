@@ -114,8 +114,19 @@ async function getLeaderboard(req, res) {
       };
     }
 
-    // Only build teamMap from actual results — don't seed with 0
+    // Seed team-sport teams (Basketball, CS2, Dota 2) with 0 so they always appear.
+    // Darts player-teams are created dynamically and should only appear when they have results.
+    const { rows: allTeams } = await db.query(`
+      SELECT DISTINCT t.name
+      FROM teams t
+      JOIN sports s ON s.id = t.sport_id
+      WHERE s.name NOT IN ('Darts', 'Table Tennis', 'Chess')
+      ORDER BY t.name
+    `);
     const teamMap = {};
+    for (const t of allTeams) {
+      teamMap[t.name] = { team_name: t.name, total_points: 0, gold: 0, silver: 0, bronze: 0, results: [] };
+    }
 
     const applyPlacements = (tournamentData) => {
       const pointsTable = SPORT_POINTS[tournamentData.sport_name] ?? [0, 0, 0, 0];

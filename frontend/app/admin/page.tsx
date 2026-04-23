@@ -143,8 +143,8 @@ function PlacementPanel({
 
 /* ── Darts Groups Panel ── */
 
-interface DartsAddGroupState { player1_name: string; player2_name: string }
-const emptyDartsGroup = (): DartsAddGroupState => ({ player1_name: '', player2_name: '' });
+interface DartsAddGroupState { player1_name: string; player1_team_id: string; player2_name: string; player2_team_id: string }
+const emptyDartsGroup = (): DartsAddGroupState => ({ player1_name: '', player1_team_id: '', player2_name: '', player2_team_id: '' });
 
 function DartsGroupsPanel({
   tournament,
@@ -155,25 +155,29 @@ function DartsGroupsPanel({
   onMsg: (text: string, ok?: boolean) => void;
   onGroupsChanged: () => void;
 }) {
-  const [groups,  setGroups]  = useState<DartsGroup[]>([]);
-  const [showAdd, setShowAdd] = useState(false);
-  const [addForm, setAddForm] = useState<DartsAddGroupState>(emptyDartsGroup());
-  const [saving,  setSaving]  = useState(false);
+  const [groups,   setGroups]   = useState<DartsGroup[]>([]);
+  const [allTeams, setAllTeams] = useState<{ id: number; name: string }[]>([]);
+  const [showAdd,  setShowAdd]  = useState(false);
+  const [addForm,  setAddForm]  = useState<DartsAddGroupState>(emptyDartsGroup());
+  const [saving,   setSaving]   = useState(false);
 
   const load = useCallback(() => {
     api.darts.groups.list(tournament.id).then(setGroups).catch(() => {});
   }, [tournament.id]);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { api.teams.list().then(setAllTeams).catch(() => {}); }, []);
 
   const handleAdd = async () => {
-    if (!addForm.player1_name.trim() || !addForm.player2_name.trim()) return;
+    if (!addForm.player1_name.trim() || !addForm.player1_team_id || !addForm.player2_name.trim() || !addForm.player2_team_id) return;
     setSaving(true);
     try {
       await api.darts.groups.create({
-        tournament_id: tournament.id,
-        player1_name:  addForm.player1_name.trim(),
-        player2_name:  addForm.player2_name.trim(),
+        tournament_id:  tournament.id,
+        player1_name:   addForm.player1_name.trim(),
+        player1_team_id: Number(addForm.player1_team_id),
+        player2_name:   addForm.player2_name.trim(),
+        player2_team_id: Number(addForm.player2_team_id),
       });
       onMsg('Group created');
       setShowAdd(false);
@@ -198,7 +202,7 @@ function DartsGroupsPanel({
     } catch { onMsg('Failed to delete group', false); }
   };
 
-  const canSubmit = addForm.player1_name.trim() && addForm.player2_name.trim();
+  const canSubmit = addForm.player1_name.trim() && addForm.player1_team_id && addForm.player2_name.trim() && addForm.player2_team_id;
 
   return (
     <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
@@ -217,7 +221,6 @@ function DartsGroupsPanel({
         </button>
       </div>
 
-      {/* Existing groups */}
       {groups.length === 0 && !showAdd && (
         <p className="text-xs text-muted">No groups yet — add one to create the first group match.</p>
       )}
@@ -227,52 +230,51 @@ function DartsGroupsPanel({
             <div>
               <span className="text-xs font-bold text-foreground mr-2">Group {g.name}</span>
               <span className="text-xs text-muted">
-                {g.teams.map((t) => t.name).join(' vs ')}
+                {g.teams.map((t) => t.player_name ? `${t.player_name} (${t.name})` : t.name).join(' vs ')}
               </span>
             </div>
-            <button
-              onClick={() => handleDelete(g.id)}
-              className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors"
-              title="Delete group"
-            >
+            <button onClick={() => handleDelete(g.id)} className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors" title="Delete group">
               <Trash2 size={13} />
             </button>
           </div>
         ))}
       </div>
 
-      {/* Add group form */}
       {showAdd && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <div>
-            <label className="label">Player 1</label>
-            <input
-              className="input"
-              placeholder="Player name"
-              value={addForm.player1_name}
-              onChange={(e) => setAddForm({ ...addForm, player1_name: e.target.value })}
-              onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleAdd()}
-            />
-          </div>
-          <div>
-            <label className="label">Player 2</label>
-            <input
-              className="input"
-              placeholder="Player name"
-              value={addForm.player2_name}
-              onChange={(e) => setAddForm({ ...addForm, player2_name: e.target.value })}
-              onKeyDown={(e) => e.key === 'Enter' && canSubmit && handleAdd()}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <button
-              onClick={handleAdd}
-              disabled={saving || !canSubmit}
-              className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
-            >
-              {saving ? 'Creating…' : 'Create Group'}
-            </button>
-          </div>
+        <div className="space-y-3 pt-1">
+          {([1, 2] as const).map((n) => (
+            <div key={n} className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">Player {n} Name</label>
+                <input
+                  className="input"
+                  placeholder="Player name"
+                  value={n === 1 ? addForm.player1_name : addForm.player2_name}
+                  onChange={(e) => setAddForm({ ...addForm, [n === 1 ? 'player1_name' : 'player2_name']: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="label">Player {n} Team</label>
+                <select
+                  className="input"
+                  value={n === 1 ? addForm.player1_team_id : addForm.player2_team_id}
+                  onChange={(e) => setAddForm({ ...addForm, [n === 1 ? 'player1_team_id' : 'player2_team_id']: e.target.value })}
+                >
+                  <option value="">— Select team —</option>
+                  {allTeams.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ))}
+          <button
+            onClick={handleAdd}
+            disabled={saving || !canSubmit}
+            className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
+          >
+            {saving ? 'Creating…' : 'Create Group'}
+          </button>
         </div>
       )}
     </div>
