@@ -103,19 +103,24 @@ async function getDartsGroups(req, res) {
 }
 
 // POST /api/darts/groups
-// Body: { tournament_id, player1_name, player1_team_id, player2_name, player2_team_id }
-// Group name is auto-assigned as the next letter (A, B, C…).
+// Body: { tournament_id, players: [{ name, team_id }, ...] } — exactly 4 players
 async function createDartsGroup(req, res) {
   try {
-    const { tournament_id, player1_name, player1_team_id, player2_name, player2_team_id } = req.body;
-    if (!tournament_id || !player1_name?.trim() || !player2_name?.trim() || !player1_team_id || !player2_team_id) {
-      return res.status(400).json({ error: 'tournament_id, player names and team IDs are required' });
+    const { tournament_id, players } = req.body;
+    if (!tournament_id || !Array.isArray(players) || players.length !== 4) {
+      return res.status(400).json({ error: 'tournament_id and exactly 4 players are required' });
     }
-    if (player1_team_id === player2_team_id) {
-      return res.status(400).json({ error: 'Players must be from different teams' });
+    for (const p of players) {
+      if (!p.name?.trim() || !p.team_id) {
+        return res.status(400).json({ error: 'Each player needs a name and team' });
+      }
+    }
+    const teamIds = players.map((p) => Number(p.team_id));
+    if (new Set(teamIds).size !== 4) {
+      return res.status(400).json({ error: 'All 4 players must be from different teams' });
     }
 
-    // Auto-assign the next group letter (A, B, C…)
+    // Auto-assign next group letter
     const { rows: [{ count }] } = await db.query(
       `SELECT COUNT(*) AS count FROM darts_groups WHERE tournament_id = $1`, [tournament_id]
     );
@@ -126,17 +131,24 @@ async function createDartsGroup(req, res) {
       [tournament_id, name]
     );
 
-    await db.query(
-      `INSERT INTO darts_group_teams (group_id, team_id, player_name) VALUES ($1, $2, $3), ($1, $4, $5)`,
-      [group.id, player1_team_id, player1_name.trim(), player2_team_id, player2_name.trim()]
-    );
+    // Insert all 4 group team entries
+    for (const p of players) {
+      await db.query(
+        `INSERT INTO darts_group_teams (group_id, team_id, player_name) VALUES ($1, $2, $3)`,
+        [group.id, Number(p.team_id), p.name.trim()]
+      );
+    }
 
-    // Auto-create the group match using the actual team IDs
-    await db.query(
-      `INSERT INTO darts_matches (tournament_id, group_id, stage, team1_id, team2_id, status)
-       VALUES ($1, $2, 'group', $3, $4, 'upcoming')`,
-      [tournament_id, group.id, player1_team_id, player2_team_id]
-    );
+    // Create round-robin matches (6 matches for 4 players)
+    for (let i = 0; i < 4; i++) {
+      for (let j = i + 1; j < 4; j++) {
+        await db.query(
+          `INSERT INTO darts_matches (tournament_id, group_id, stage, team1_id, team2_id, status)
+           VALUES ($1, $2, 'group', $3, $4, 'upcoming')`,
+          [tournament_id, group.id, teamIds[i], teamIds[j]]
+        );
+      }
+    }
 
     res.status(201).json({ id: group.id, name });
   } catch (err) {

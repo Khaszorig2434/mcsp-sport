@@ -143,8 +143,9 @@ function PlacementPanel({
 
 /* ── Darts Groups Panel ── */
 
-interface DartsAddGroupState { player1_name: string; player1_team_id: string; player2_name: string; player2_team_id: string }
-const emptyDartsGroup = (): DartsAddGroupState => ({ player1_name: '', player1_team_id: '', player2_name: '', player2_team_id: '' });
+interface DartsPlayer { name: string; team_id: string }
+const emptyPlayer = (): DartsPlayer => ({ name: '', team_id: '' });
+const emptyDartsGroup = () => [emptyPlayer(), emptyPlayer(), emptyPlayer(), emptyPlayer()];
 
 function DartsGroupsPanel({
   tournament,
@@ -158,7 +159,7 @@ function DartsGroupsPanel({
   const [groups,   setGroups]   = useState<DartsGroup[]>([]);
   const [allTeams, setAllTeams] = useState<{ id: number; name: string }[]>([]);
   const [showAdd,  setShowAdd]  = useState(false);
-  const [addForm,  setAddForm]  = useState<DartsAddGroupState>(emptyDartsGroup());
+  const [players,  setPlayers]  = useState<DartsPlayer[]>(emptyDartsGroup());
   const [saving,   setSaving]   = useState(false);
 
   const load = useCallback(() => {
@@ -166,22 +167,32 @@ function DartsGroupsPanel({
   }, [tournament.id]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { api.teams.list().then(setAllTeams).catch(() => {}); }, []);
+  useEffect(() => {
+    // Deduplicate teams by name to avoid showing sport-specific duplicates
+    api.teams.list().then((rows) => {
+      const seen = new Set<string>();
+      setAllTeams(rows.filter((t) => {
+        if (seen.has(t.name)) return false;
+        seen.add(t.name);
+        return true;
+      }));
+    }).catch(() => {});
+  }, []);
+
+  const updatePlayer = (i: number, field: keyof DartsPlayer, val: string) =>
+    setPlayers((prev) => prev.map((p, idx) => idx === i ? { ...p, [field]: val } : p));
 
   const handleAdd = async () => {
-    if (!addForm.player1_name.trim() || !addForm.player1_team_id || !addForm.player2_name.trim() || !addForm.player2_team_id) return;
+    if (players.some((p) => !p.name.trim() || !p.team_id)) return;
     setSaving(true);
     try {
       await api.darts.groups.create({
-        tournament_id:  tournament.id,
-        player1_name:   addForm.player1_name.trim(),
-        player1_team_id: Number(addForm.player1_team_id),
-        player2_name:   addForm.player2_name.trim(),
-        player2_team_id: Number(addForm.player2_team_id),
+        tournament_id: tournament.id,
+        players: players.map((p) => ({ name: p.name.trim(), team_id: Number(p.team_id) })),
       });
       onMsg('Group created');
       setShowAdd(false);
-      setAddForm(emptyDartsGroup());
+      setPlayers(emptyDartsGroup());
       load();
       onGroupsChanged();
     } catch (err: unknown) {
@@ -193,7 +204,7 @@ function DartsGroupsPanel({
   };
 
   const handleDelete = async (groupId: number) => {
-    if (!confirm('Delete this group and its match?')) return;
+    if (!confirm('Delete this group and its matches?')) return;
     try {
       await api.darts.groups.delete(groupId);
       onMsg('Group deleted');
@@ -202,7 +213,7 @@ function DartsGroupsPanel({
     } catch { onMsg('Failed to delete group', false); }
   };
 
-  const canSubmit = addForm.player1_name.trim() && addForm.player1_team_id && addForm.player2_name.trim() && addForm.player2_team_id;
+  const canSubmit = players.every((p) => p.name.trim() && p.team_id);
 
   return (
     <div className="bg-surface-card border border-brand/20 rounded-2xl p-5 space-y-4">
@@ -210,7 +221,7 @@ function DartsGroupsPanel({
         <span className="text-[10px] font-bold text-brand uppercase tracking-widest">Darts Groups</span>
         <div className="flex-1 h-px bg-surface-border" />
         <button
-          onClick={() => { setShowAdd(!showAdd); setAddForm(emptyDartsGroup()); }}
+          onClick={() => { setShowAdd(!showAdd); setPlayers(emptyDartsGroup()); }}
           className={cn(
             'flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors',
             showAdd ? 'bg-surface-hover text-muted' : 'bg-brand text-white hover:bg-brand-dark',
@@ -226,14 +237,18 @@ function DartsGroupsPanel({
       )}
       <div className="space-y-2">
         {groups.map((g) => (
-          <div key={g.id} className="flex items-center justify-between bg-surface rounded-xl px-4 py-2.5 border border-surface-border">
+          <div key={g.id} className="flex items-start justify-between bg-surface rounded-xl px-4 py-2.5 border border-surface-border">
             <div>
               <span className="text-xs font-bold text-foreground mr-2">Group {g.name}</span>
-              <span className="text-xs text-muted">
-                {g.teams.map((t) => t.player_name ? `${t.player_name} (${t.name})` : t.name).join(' vs ')}
-              </span>
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5">
+                {g.teams.map((t) => (
+                  <span key={t.id} className="text-xs text-muted">
+                    {t.player_name ? `${t.player_name} (${t.name})` : t.name}
+                  </span>
+                ))}
+              </div>
             </div>
-            <button onClick={() => handleDelete(g.id)} className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors" title="Delete group">
+            <button onClick={() => handleDelete(g.id)} className="p-1.5 rounded-lg text-muted hover:text-loss hover:bg-loss/10 transition-colors shrink-0" title="Delete group">
               <Trash2 size={13} />
             </button>
           </div>
@@ -241,37 +256,32 @@ function DartsGroupsPanel({
       </div>
 
       {showAdd && (
-        <div className="space-y-3 pt-1">
-          {([1, 2] as const).map((n) => (
-            <div key={n} className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="label">Player {n} Name</label>
-                <input
-                  className="input"
-                  placeholder="Player name"
-                  value={n === 1 ? addForm.player1_name : addForm.player2_name}
-                  onChange={(e) => setAddForm({ ...addForm, [n === 1 ? 'player1_name' : 'player2_name']: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="label">Player {n} Team</label>
-                <select
-                  className="input"
-                  value={n === 1 ? addForm.player1_team_id : addForm.player2_team_id}
-                  onChange={(e) => setAddForm({ ...addForm, [n === 1 ? 'player1_team_id' : 'player2_team_id']: e.target.value })}
-                >
-                  <option value="">— Select team —</option>
-                  {allTeams.map((t) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
+        <div className="space-y-2 pt-1">
+          <p className="text-[10px] text-muted uppercase tracking-widest font-bold mb-2">4 Players per group</p>
+          {players.map((p, i) => (
+            <div key={i} className="grid grid-cols-2 gap-2">
+              <input
+                className="input"
+                placeholder={`Player ${i + 1} name`}
+                value={p.name}
+                onChange={(e) => updatePlayer(i, 'name', e.target.value)}
+              />
+              <select
+                className="input"
+                value={p.team_id}
+                onChange={(e) => updatePlayer(i, 'team_id', e.target.value)}
+              >
+                <option value="">— Team —</option>
+                {allTeams.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             </div>
           ))}
           <button
             onClick={handleAdd}
             disabled={saving || !canSubmit}
-            className="bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
+            className="mt-2 bg-brand text-white text-sm font-semibold px-5 py-2 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-40"
           >
             {saving ? 'Creating…' : 'Create Group'}
           </button>
