@@ -50,7 +50,23 @@ async function getLiveMatches(req, res) {
       JOIN  tournaments tn ON tn.id = m.tournament_id
       JOIN  sports      s  ON s.id  = tn.sport_id
       WHERE m.status = 'live'
-      ORDER BY m.match_date ASC
+
+      UNION ALL
+
+      SELECT
+        dm.id, dm.tournament_id, dm.stage, dm.status, dm.match_date,
+        dm.score1, dm.score2, dm.winner_id,
+        t1.id AS team1_id, t1.name AS team1_name, t1.short_name AS team1_short,
+        t2.id AS team2_id, t2.name AS team2_name, t2.short_name AS team2_short,
+        tn.name AS tournament_name, s.name AS sport_name, s.icon AS sport_icon
+      FROM darts_matches dm
+      LEFT JOIN teams      t1 ON t1.id = dm.team1_id
+      LEFT JOIN teams      t2 ON t2.id = dm.team2_id
+      JOIN  tournaments tn ON tn.id = dm.tournament_id
+      JOIN  sports      s  ON s.id  = tn.sport_id
+      WHERE dm.status = 'live'
+
+      ORDER BY match_date ASC
     `;
     const { rows } = await db.query(query);
     res.json(rows.map(formatMatch));

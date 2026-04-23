@@ -7,19 +7,46 @@ async function getSchedule(req, res) {
       SELECT
         m.id, m.tournament_id, m.stage, m.status, m.match_date,
         m.score1, m.score2, m.winner_id, m.loser_id,
-        t1.id AS team1_id, t1.name AS team1_name, t1.short_name AS team1_short, t1.logo_url AS team1_logo, t1.player_name AS team1_player,
-        t2.id AS team2_id, t2.name AS team2_name, t2.short_name AS team2_short, t2.logo_url AS team2_logo, t2.player_name AS team2_player,
+        t1.id AS team1_id, t1.name AS team1_name, t1.short_name AS team1_short, t1.logo_url AS team1_logo,
+        COALESCE(dgt1.player_name, t1.player_name) AS team1_player,
+        t2.id AS team2_id, t2.name AS team2_name, t2.short_name AS team2_short, t2.logo_url AS team2_logo,
+        COALESCE(dgt2.player_name, t2.player_name) AS team2_player,
         tn.name AS tournament_name,
         s.name  AS sport_name,
         s.icon  AS sport_icon
       FROM matches m
-      LEFT JOIN teams      t1 ON t1.id = m.team1_id
-      LEFT JOIN teams      t2 ON t2.id = m.team2_id
+      LEFT JOIN teams      t1   ON t1.id = m.team1_id
+      LEFT JOIN teams      t2   ON t2.id = m.team2_id
       JOIN  tournaments tn ON tn.id = m.tournament_id
       JOIN  sports       s ON s.id  = tn.sport_id
+      LEFT JOIN darts_group_teams dgt1 ON dgt1.team_id = m.team1_id AND dgt1.group_id = m.group_id
+      LEFT JOIN darts_group_teams dgt2 ON dgt2.team_id = m.team2_id AND dgt2.group_id = m.group_id
       WHERE m.status = 'upcoming'
         AND m.match_date IS NOT NULL
-      ORDER BY m.match_date ASC, m.id ASC
+
+      UNION ALL
+
+      SELECT
+        dm.id, dm.tournament_id, dm.stage, dm.status, dm.match_date,
+        dm.score1, dm.score2, dm.winner_id, dm.loser_id,
+        t1.id AS team1_id, t1.name AS team1_name, t1.short_name AS team1_short, t1.logo_url AS team1_logo,
+        COALESCE(dgt1.player_name, t1.player_name) AS team1_player,
+        t2.id AS team2_id, t2.name AS team2_name, t2.short_name AS team2_short, t2.logo_url AS team2_logo,
+        COALESCE(dgt2.player_name, t2.player_name) AS team2_player,
+        tn.name AS tournament_name,
+        s.name  AS sport_name,
+        s.icon  AS sport_icon
+      FROM darts_matches dm
+      LEFT JOIN teams      t1   ON t1.id = dm.team1_id
+      LEFT JOIN teams      t2   ON t2.id = dm.team2_id
+      JOIN  tournaments tn ON tn.id = dm.tournament_id
+      JOIN  sports       s ON s.id  = tn.sport_id
+      LEFT JOIN darts_group_teams dgt1 ON dgt1.team_id = dm.team1_id AND dgt1.group_id = dm.group_id
+      LEFT JOIN darts_group_teams dgt2 ON dgt2.team_id = dm.team2_id AND dgt2.group_id = dm.group_id
+      WHERE dm.status = 'upcoming'
+        AND dm.match_date IS NOT NULL
+
+      ORDER BY match_date ASC, id ASC
     `);
 
     res.json(rows.map((row) => ({
