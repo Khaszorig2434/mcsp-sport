@@ -218,4 +218,25 @@ async function updateTeam(req, res) {
   }
 }
 
-module.exports = { listTournaments, getTournament, getIndividualPlacements, setIndividualPlacements, clearIndividualPlacements, listTeams, updateTeam };
+// PATCH /api/tournaments/:id — update status
+async function updateTournament(req, res) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const VALID = ['upcoming', 'ongoing', 'completed'];
+    if (!status || !VALID.includes(status)) {
+      return res.status(400).json({ error: `status must be one of: ${VALID.join(', ')}` });
+    }
+    const { rows } = await db.query(
+      `UPDATE tournaments SET status=$1 WHERE id=$2 RETURNING id, name, status`,
+      [status, id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Tournament not found' });
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to update tournament' });
+  }
+}
+
+module.exports = { listTournaments, getTournament, updateTournament, getIndividualPlacements, setIndividualPlacements, clearIndividualPlacements, listTeams, updateTeam };

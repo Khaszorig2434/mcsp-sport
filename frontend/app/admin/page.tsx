@@ -760,16 +760,35 @@ export default function AdminPage() {
                     <span className="text-[10px] text-muted">{statusCounts.upcoming} upcoming</span>
                   </div>
                 </div>
-                <button
-                  onClick={() => { setShowAdd(!showAdd); setEditingId(null); }}
-                  className={cn(
-                    'flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-colors shrink-0',
-                    showAdd ? 'bg-surface-hover text-muted' : 'bg-brand text-white hover:bg-brand-dark',
-                  )}
-                >
-                  {showAdd ? <X size={14} /> : <Plus size={14} />}
-                  {showAdd ? 'Cancel' : 'Add Match'}
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <select
+                    value={selected.status}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value as 'upcoming' | 'ongoing' | 'completed';
+                      try {
+                        await api.tournaments.updateStatus(selected.id, newStatus);
+                        setSelected({ ...selected, status: newStatus });
+                        setTournaments((prev) => prev.map((t) => t.id === selected.id ? { ...t, status: newStatus } : t));
+                        flash('Tournament status updated');
+                      } catch { flash('Failed to update status', false); }
+                    }}
+                    className="input text-xs py-1.5 px-3"
+                  >
+                    <option value="upcoming">Upcoming</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                  <button
+                    onClick={() => { setShowAdd(!showAdd); setEditingId(null); }}
+                    className={cn(
+                      'flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-xl transition-colors',
+                      showAdd ? 'bg-surface-hover text-muted' : 'bg-brand text-white hover:bg-brand-dark',
+                    )}
+                  >
+                    {showAdd ? <X size={14} /> : <Plus size={14} />}
+                    {showAdd ? 'Cancel' : 'Add Match'}
+                  </button>
+                </div>
               </div>
 
               {/* Add match form */}

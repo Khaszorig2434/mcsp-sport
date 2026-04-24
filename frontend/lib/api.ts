@@ -23,6 +23,15 @@ export const api = {
     get(id: number | string) {
       return get<Tournament>(`/tournaments/${id}`);
     },
+    async updateStatus(id: number | string, status: 'upcoming' | 'ongoing' | 'completed') {
+      const res = await fetch(`${API_BASE}/tournaments/${id}`, {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error('Failed to update tournament status');
+      return res.json();
+    },
     getIndividualPlacements(id: number | string) {
       return get<{ place: number; player_name: string; team_id: number | null; team_name: string | null }[]>(
         `/tournaments/${id}/individual-placements`
